@@ -7,7 +7,7 @@ This python package provides useful scripts, functions and classes for building 
 -------------------------------------------------------------------------------
 Organization
 -------------------------------------------------------------------------------
-The modules is organized into 3 main parts:
+The package is organized into 3 main parts:
 - vis_util : utility functions for computer vision 
 - lang_util : utility functions for natural language processing 
 - tf_util : utility functions for tensorflow / deep learning
