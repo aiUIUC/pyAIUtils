@@ -31,7 +31,8 @@ git checkout BRANCH
 git merge master
 ```
 
-### Then fix conflicts, and push the branch again.
+Then fix conflicts, and push the branch again.
+
 ```
 git push origin BRANCH
 ```
