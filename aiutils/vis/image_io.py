@@ -2,8 +2,6 @@ from PIL import Image
 import numpy as np
 import pdb
 
-import aiutils.devtools.err_msg as err_msg
-
 
 def imread(filename):
     """
