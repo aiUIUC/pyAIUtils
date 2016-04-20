@@ -81,3 +81,26 @@ def conv2d(input,
                                    strides=strides,
                                    padding=padding) + b)
     return output
+
+
+def batch_norm(input, name):
+    rank = len(input.get_shape().as_list())
+    in_dim = input.get_shape().as_list()[-1]
+    if rank == 2:
+        axes = [0]
+    elif rank == 4:
+        axes = [0, 1, 2]
+    else:
+        raise ValueError('rank must be 2 or 4.')
+
+    with tf.variable_scope(name):
+        mean, variance = tf.nn.moments(input, axes)
+        offset = tf.get_variable('offset',
+                                 shape=[in_dim],
+                                 initializer=tf.constant_initializer(0.0))
+        scale = tf.get_variable('scale',
+                                shape=[in_dim],
+                                initializer=tf.constant_initializer(1.0))
+        output = tf.nn.batch_normalization(input, mean, variance, offset,
+                                           scale, 1e-5)
+    return output
