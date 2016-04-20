@@ -10,7 +10,7 @@ def imread(filename):
     Matlab like function for reading an image file.
 
     Returns:
-    np_im (numpy.ndarray): h x w x 3 ndarray for color images and 
+    im_array (numpy.ndarray): h x w x 3 ndarray for color images and 
         h x w for grayscale images
     """
     try:
@@ -24,14 +24,9 @@ def imread(filename):
         "imread only supports 'RGB' and 'L' modes, found '{}'".format(im.mode)
     err_msg.check_assertion(assert_cond, err_str)
 
-    im_seq = np.array(im.getdata(), np.uint8)
+    im_array = np.array(im)
 
-    if im.mode == 'RGB':
-        np_im = im_seq.reshape(im.size[1], im.size[0], 3)
-    elif im.mode == 'L':
-        np_im = im_seq.reshape(im.size[1], im.size[0])
-
-    return np_im
+    return im_array
 
 
 def imshow(np_im):
@@ -54,5 +49,3 @@ def imshow(np_im):
         im = Image.fromarray(np_im, 'L')
 
     im.show()
-
-
