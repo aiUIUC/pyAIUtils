@@ -2,10 +2,6 @@ import numpy as np
 import tensorflow as tf
 
 
-def identity(input):
-    return input
-
-
 def full(input, out_dim, name, gain=np.sqrt(2), func=tf.nn.relu):
     """ Fully connected layer helper.
     
@@ -20,6 +16,7 @@ def full(input, out_dim, name, gain=np.sqrt(2), func=tf.nn.relu):
       gain (float): Gain used when calculating stddev of weights.
         Suggest values: sqrt(2) for relu, 1.0 for identity.
       func (function): Function used to calculate neural activations.
+        If `None` uses identity.
       
     Returns:
       output (tensor): The neural activations for this layer.
@@ -32,7 +29,11 @@ def full(input, out_dim, name, gain=np.sqrt(2), func=tf.nn.relu):
         b_init = tf.constant_initializer()
         w = tf.get_variable('w', shape=[in_dim, out_dim], initializer=w_init)
         b = tf.get_variable('b', shape=[out_dim], initializer=b_init)
-        output = func(tf.matmul(input, w) + b)
+
+        output = tf.matmul(input, w) + b
+        if func is not None:
+            output = func(output)
+
     return output
 
 
@@ -62,6 +63,7 @@ def conv2d(input,
       gain (float): Gain used when calculating stddev of weights.
         Suggest values: sqrt(2) for relu, 1.0 for identity.
       func (function): Function used to calculate neural activations.
+        If `None` uses identity.
       
     Returns:
       output (tensor): The neural activations for this layer.
@@ -76,10 +78,11 @@ def conv2d(input,
                             shape=[filter_size, filter_size, in_dim, out_dim],
                             initializer=w_init)
         b = tf.get_variable('b', shape=[out_dim], initializer=b_init)
-        output = func(tf.nn.conv2d(input,
-                                   w,
-                                   strides=strides,
-                                   padding=padding) + b)
+
+        output = tf.nn.conv2d(input, w, strides=strides, padding=padding) + b
+        if func is not None:
+            output = func(output)
+
     return output
 
 
@@ -101,12 +104,13 @@ def batch_norm(input, name):
     """
     rank = len(input.get_shape().as_list())
     in_dim = input.get_shape().as_list()[-1]
+
     if rank == 2:
         axes = [0]
     elif rank == 4:
         axes = [0, 1, 2]
     else:
-        raise ValueError('rank must be 2 or 4.')
+        raise ValueError('Input tensor must have rank 2 or 4.')
 
     with tf.variable_scope(name):
         mean, variance = tf.nn.moments(input, axes)
