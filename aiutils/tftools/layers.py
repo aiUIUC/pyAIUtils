@@ -30,16 +30,20 @@ def full(input, out_dim, name, gain=np.sqrt(2), func=tf.nn.relu):
     with tf.variable_scope(name):
         w_init = tf.random_normal_initializer(stddev)
         b_init = tf.constant_initializer()
-        w = tf.get_variable('w',
-                            shape=[in_dim, out_dim],
-                            initializer=w_init)
-        b = tf.get_variable('b',
-                            shape=[out_dim],
-                            initializer=b_init)
+        w = tf.get_variable('w', shape=[in_dim, out_dim], initializer=w_init)
+        b = tf.get_variable('b', shape=[out_dim], initializer=b_init)
         output = func(tf.matmul(input, w) + b)
     return output
 
-def conv2d(input, filter_size, out_dim, name, strides=[1, 1, 1, 1], padding='SAME', gain=np.sqrt(2), func=tf.nn.relu):
+
+def conv2d(input,
+           filter_size,
+           out_dim,
+           name,
+           strides=[1, 1, 1, 1],
+           padding='SAME',
+           gain=np.sqrt(2),
+           func=tf.nn.relu):
     """ Conv2d layer helper.
     
     Creates filter and bias parameters with good initial values. Then applies the conv op and func.
@@ -64,15 +68,16 @@ def conv2d(input, filter_size, out_dim, name, strides=[1, 1, 1, 1], padding='SAM
         Will have shape `[batch, in_weight, in_width, out_dim]`.
     """
     in_dim = input.get_shape().as_list()[-1]
-    stddev = 1.0 * gain / np.sqrt(filter_size*filter_size*in_dim)
+    stddev = 1.0 * gain / np.sqrt(filter_size * filter_size * in_dim)
     with tf.variable_scope(name):
         w_init = tf.random_normal_initializer(stddev)
         b_init = tf.constant_initializer()
         w = tf.get_variable('w',
                             shape=[filter_size, filter_size, in_dim, out_dim],
                             initializer=w_init)
-        b = tf.get_variable('b',
-                            shape=[out_dim],
-                            initializer=b_init)
-        output = func(tf.nn.conv2d(input, w, strides=strides, padding=padding) + b)
+        b = tf.get_variable('b', shape=[out_dim], initializer=b_init)
+        output = func(tf.nn.conv2d(input,
+                                   w,
+                                   strides=strides,
+                                   padding=padding) + b)
     return output

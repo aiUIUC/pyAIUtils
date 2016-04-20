@@ -20,7 +20,7 @@ def test_full():
     x_ = np.float32(np.zeros(input_shape))
     y_ = np.float32(np.zeros(output_shape))
     y_hat = sess.run(y, feed_dict={x: x_})
-    assert(np.all(y_hat == y_))
+    assert (np.all(y_hat == y_))
 
 
 def test_conv2d():
@@ -41,4 +41,4 @@ def test_conv2d():
     x_ = np.float32(np.zeros(input_shape))
     y_ = np.float32(np.zeros(output_shape))
     y_hat = sess.run(y, feed_dict={x: x_})
-    assert(np.all(y_hat == y_))
+    assert (np.all(y_hat == y_))
