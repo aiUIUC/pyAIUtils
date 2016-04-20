@@ -2,10 +2,6 @@ import numpy as np
 import tensorflow as tf
 
 
-def identity(input):
-    return input
-
-
 def full(input, out_dim, name, gain=np.sqrt(2), func=tf.nn.relu):
     """ Fully connected layer helper.
     
@@ -20,6 +16,7 @@ def full(input, out_dim, name, gain=np.sqrt(2), func=tf.nn.relu):
       gain (float): Gain used when calculating stddev of weights.
         Suggest values: sqrt(2) for relu, 1.0 for identity.
       func (function): Function used to calculate neural activations.
+        If `None` uses identity.
       
     Returns:
       output (tensor): The neural activations for this layer.
@@ -32,7 +29,11 @@ def full(input, out_dim, name, gain=np.sqrt(2), func=tf.nn.relu):
         b_init = tf.constant_initializer()
         w = tf.get_variable('w', shape=[in_dim, out_dim], initializer=w_init)
         b = tf.get_variable('b', shape=[out_dim], initializer=b_init)
-        output = func(tf.matmul(input, w) + b)
+
+        output = tf.matmul(input, w) + b
+        if func is not None:
+            output = func(output)
+
     return output
 
 
@@ -62,6 +63,7 @@ def conv2d(input,
       gain (float): Gain used when calculating stddev of weights.
         Suggest values: sqrt(2) for relu, 1.0 for identity.
       func (function): Function used to calculate neural activations.
+        If `None` uses identity.
       
     Returns:
       output (tensor): The neural activations for this layer.
@@ -76,8 +78,48 @@ def conv2d(input,
                             shape=[filter_size, filter_size, in_dim, out_dim],
                             initializer=w_init)
         b = tf.get_variable('b', shape=[out_dim], initializer=b_init)
-        output = func(tf.nn.conv2d(input,
-                                   w,
-                                   strides=strides,
-                                   padding=padding) + b)
+
+        output = tf.nn.conv2d(input, w, strides=strides, padding=padding) + b
+        if func is not None:
+            output = func(output)
+
+    return output
+
+
+def batch_norm(input, name):
+    """ Batch norm layer helper.
+    
+    Gets mean and variance, and creates offset and scale parameters with good initial values.
+    Then applies the batch_normalization op.
+    
+    Args:
+      input (tensor): Input to the layer. 
+        Should have shape `[batch, in_dim]` or `[batch, in_height, in_width, in_dim]`.
+        Must be one of the following types: `float32`, `float64`.
+      name (str): Name used by the `tf.variable_scope`.
+      
+    Returns:
+      output (tensor): Batch normalized activations.
+        Will have the same shape as input.
+    """
+    rank = len(input.get_shape().as_list())
+    in_dim = input.get_shape().as_list()[-1]
+
+    if rank == 2:
+        axes = [0]
+    elif rank == 4:
+        axes = [0, 1, 2]
+    else:
+        raise ValueError('Input tensor must have rank 2 or 4.')
+
+    with tf.variable_scope(name):
+        mean, variance = tf.nn.moments(input, axes)
+        offset = tf.get_variable('offset',
+                                 shape=[in_dim],
+                                 initializer=tf.constant_initializer(0.0))
+        scale = tf.get_variable('scale',
+                                shape=[in_dim],
+                                initializer=tf.constant_initializer(1.0))
+        output = tf.nn.batch_normalization(input, mean, variance, offset,
+                                           scale, 1e-5)
     return output
