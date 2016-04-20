@@ -5,7 +5,7 @@ This python package provides useful scripts, functions and classes for building 
 The package is organized into 3 main parts:
 - vis : utility functions for computer vision 
 - lang : utility functions for natural language processing 
-- tf : utility functions for tensorflow / deep learning
+- tftools : utility functions for tensorflow / deep learning
 
 
 Have fun contributing and using :smile:.
