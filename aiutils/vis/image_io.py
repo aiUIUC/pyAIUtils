@@ -56,7 +56,3 @@ def imshow(np_im):
     im.show()
 
 
-if __name__=='__main__':
-    filename = '/home/tanmay/Desktop/peppers.png'
-    im = imread(filename)
-    imshow(im)
