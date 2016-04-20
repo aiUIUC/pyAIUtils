@@ -84,6 +84,21 @@ def conv2d(input,
 
 
 def batch_norm(input, name):
+    """ Batch norm layer helper.
+    
+    Gets mean and variance, and creates offset and scale parameters with good initial values.
+    Then applies the batch_normalization op.
+    
+    Args:
+      input (tensor): Input to the layer. 
+        Should have shape `[batch, in_dim]` or `[batch, in_height, in_width, in_dim]`.
+        Must be one of the following types: `float32`, `float64`.
+      name (str): Name used by the `tf.variable_scope`.
+      
+    Returns:
+      output (tensor): Batch normalized activations.
+        Will have the same shape as input.
+    """
     rank = len(input.get_shape().as_list())
     in_dim = input.get_shape().as_list()[-1]
     if rank == 2:
