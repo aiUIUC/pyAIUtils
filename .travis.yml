@@ -1,0 +1,13 @@
+language: python
+python:
+  - "2.7"
+
+before_install:
+  - export SCRIPTS=./scripts/travis
+
+install: 
+  - sudo -E $SCRIPTS/travis_install.sh
+  - pip install -r requirements.txt
+
+script: 
+  - py.test
