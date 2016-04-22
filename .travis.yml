@@ -6,7 +6,8 @@ before_install:
   - export SCRIPTS=./scripts/travis
 
 install: 
-  - sudo -E $SCRIPTS/travis_install.sh
+  # - sudo -E $SCRIPTS/travis_install.sh
+  - pip install --upgrade https://storage.googleapis.com/tensorflow/linux/gpu/tensorflow-0.8.0-cp27-none-linux_x86_64.whl
   - pip install -r requirements.txt
 
 script: 
