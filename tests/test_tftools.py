@@ -2,8 +2,7 @@ import numpy as np
 import pytest
 import tensorflow as tf
 
-import layers
-
+from context import layers
 
 def test_full():
     batch = 1
