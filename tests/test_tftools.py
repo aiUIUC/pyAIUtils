@@ -3,6 +3,7 @@ import pytest
 import tensorflow as tf
 
 from context import layers
+from context import images
 
 def test_full():
     batch = 1
@@ -94,3 +95,20 @@ def test_batch_norm_3d():
     x = tf.placeholder(tf.float32, input_shape)
     with pytest.raises(ValueError):
         y = layers.batch_norm(x, '4d')
+
+
+def test_resize_image_like():
+    batch = 1
+    width_height = 5
+    width_height2 = 15
+    channel = 3
+    x = tf.placeholder(tf.float32, [batch, width_height, width_height, channel])
+    s = tf.placeholder(tf.float32, [batch, width_height2, width_height2, channel])
+    x_rshape = images.resize_images_like(x, s)
+    assert x_rshape.get_shape() == s.get_shape()
+
+    sess = tf.Session()
+    sess.run(tf.initialize_all_variables())
+    x_ = np.float32(np.random.rand(batch, width_height, width_height, channel))
+    x_out = sess.run(x_rshape, {x:x_})
+    assert x_out.shape == s.get_shape()
