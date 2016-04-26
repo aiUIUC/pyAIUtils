@@ -3,7 +3,7 @@ import data
 from multiprocessing import Queue
 
 
-def test_numpy_data_integration():
+def test_batch_generator_integration():
     # Setup.
     batch_size = 10
     num_samples = 100
