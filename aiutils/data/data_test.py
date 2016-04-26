@@ -1,6 +1,5 @@
 import numpy as np
 import data
-from multiprocessing import Queue
 
 
 def test_batch_generator_integration():
