@@ -35,18 +35,7 @@ def batch_generator(data, index_generator, batch_function=None):
         yield output
 
 
-def queue_generator(queue, sentinel=None):
-    """Create a generator from a queue.
-    """
-    while True:
-        value = queue.get()
-        if value is not sentinel:
-            yield value
-        else:
-            return
-
-
-def make_queue_generator(data, index_generator, queue_maxsize, batch_function=None):
+def async_batch_generator(data, index_generator, queue_maxsize, batch_function=None):
     """Create an asynchronous batch generator.
     """
     batcher = batch_generator(data, index_generator, batch_function)
@@ -57,6 +46,17 @@ def make_queue_generator(data, index_generator, queue_maxsize, batch_function=No
 
     queue_batcher = queue_generator(queue)
     return queue_batcher
+
+
+def queue_generator(queue, sentinel=None):
+    """Create a generator from a queue.
+    """
+    while True:
+        value = queue.get()
+        if value is not sentinel:
+            yield value
+        else:
+            return
 
 
 class BatchFetcher(Process):
