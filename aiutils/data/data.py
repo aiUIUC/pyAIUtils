@@ -19,7 +19,7 @@ def random(batch_size, num_samples, num_epochs):
 
 
 def batch_generator(data, index_generator, batch_function):
-    for samples in index_generator():
+    for samples in index_generator:
         batch = data.get(samples)
         yield batch_function(batch)
 
@@ -33,3 +33,13 @@ class BatchFetcher(Process):
 
         for batch in batch_generator():
             self.queue.put(batch)
+
+
+class NumpyData(object):
+    def __init__(self, array):
+        self.array = array
+
+    def get(self, indices):
+        if not isinstance(indices, np.ndarray):
+            indices = np.array(indices)
+        return self.array[indices]
