@@ -3,7 +3,7 @@ import numpy as np
 from multiprocessing import Process, Queue
 
 
-def sequential(batch_size, num_samples, num_epochs):
+def sequential(batch_size, num_samples, num_epochs=1):
     """Generate sequence indices.
     """
     for epoch in range(num_epochs):
@@ -13,7 +13,7 @@ def sequential(batch_size, num_samples, num_epochs):
             yield indices[slice_]
 
 
-def random(batch_size, num_samples, num_epochs):
+def random(batch_size, num_samples, num_epochs=1):
     """Generate random indices.
     """
     for epoch in range(num_epochs):
