@@ -1,4 +1,4 @@
-"""Utility functions of making batch generation easier."""
+"""Utility functions for making batch generation easier."""
 import numpy as np
 from multiprocessing import Process, Queue
 
@@ -23,12 +23,16 @@ def random(batch_size, num_samples, num_epochs):
             yield indices[slice_]
 
 
-def batch_generator(data, index_generator, batch_function):
+def batch_generator(data, index_generator, batch_function=None):
     """Generate batches of data.
     """
     for samples in index_generator:
         batch = data.get(samples)
-        yield batch_function(batch)
+        if batch_function:
+            output = batch_function(batch)
+        else:
+            output = batch
+        yield output
 
 
 def queue_generator(queue, sentinel=None):
@@ -42,7 +46,7 @@ def queue_generator(queue, sentinel=None):
             return
 
 
-def make_queue_generator(data, index_generator, batch_function, queue_maxsize):
+def make_queue_generator(data, index_generator, queue_maxsize, batch_function=None):
     """Create an asynchronous batch generator.
     """
     batcher = batch_generator(data, index_generator, batch_function)
