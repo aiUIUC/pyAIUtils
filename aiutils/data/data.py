@@ -1,10 +1,10 @@
-import numpy
+import numpy as np
 from multiprocessing import Process, Queue
 
 
 def sequential(batch_size, num_samples, num_epochs):
     for epoch in range(num_epochs):
-        indices = numpy.arange(num_samples)
+        indices = np.arange(num_samples)
         for i in range(0, num_samples - batch_size + 1, batch_size):
             slice_ = slice(i, i+batch_size)
             yield indices[slice_]
@@ -12,7 +12,7 @@ def sequential(batch_size, num_samples, num_epochs):
 
 def random(batch_size, num_samples, num_epochs):
     for epoch in range(num_epochs):
-        indices = numpy.random.permutation(num_samples)
+        indices = np.random.permutation(num_samples)
         for i in range(0, num_samples - batch_size + 1, batch_size):
             slice_ = slice(i, i+batch_size)
             yield indices[slice_]
