@@ -102,13 +102,21 @@ def test_resize_image_like():
     width_height = 5
     width_height2 = 15
     channel = 3
-    x = tf.placeholder(tf.float32, [batch, width_height, width_height, channel])
-    s = tf.placeholder(tf.float32, [batch, width_height2, width_height2, channel])
-    x_rshape = images.resize_images_like(x, s)
-    assert x_rshape.get_shape() == s.get_shape()
+
+    input_shape = [batch, width_height, width_height, channel]
+    target_shape = [batch, width_height2, width_height2, channel]
+
+    x = tf.placeholder(tf.float32, input_shape)
+    s = tf.placeholder(tf.float32, target_shape)
+    x_resize = images.resize_images_like(x, s)
+    assert x_resize.get_shape() == s.get_shape()
+
+    x_resize2 = images.resize_images_like(x, s, method=1)
+    assert x_resize2.get_shape() == s.get_shape()
 
     sess = tf.Session()
     sess.run(tf.initialize_all_variables())
-    x_ = np.float32(np.random.rand(batch, width_height, width_height, channel))
-    x_out = sess.run(x_rshape, {x:x_})
+    x_ = np.float32(np.random.rand(*input_shape))
+    #batch, width_height, width_height, channel))
+    x_out = sess.run(x_resize, {x:x_})
     assert x_out.shape == s.get_shape()
