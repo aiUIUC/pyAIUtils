@@ -23,14 +23,14 @@ class BatchNormalizer(object):
 
     Use:
         ewma = tf.train.ExponentialMovingAverage(decay=0.99)
-        bn = BatchNormalizer(input, 0.001, ewma, True)
+        bn = BatchNormalizer(input, ewma, 'name',  0.001)
         update_assignments = bn.get_assigner()
-        x = bn.normalize(y, train=training?)
+        x = bn.normalize(y, train=training)
         (the output x will be batch-normalized).
     """
 
-    def __init__(self, input, epsilon, ewma_trainer, name):
-        rank = len(input.get_shape().as_list())
+    def __init__(self, input, ewma_trainer, name, epsilon=1e-5):
+        rank = len(input.get_shape())
         in_dim = input.get_shape().as_list()[-1]
 
         if rank == 2:
@@ -45,10 +45,10 @@ class BatchNormalizer(object):
         self.variance = tf.Variable(tf.constant(1.0, shape=[in_dim]),
                 trainable=False)
         with tf.variable_scope(name):
-            self.beta = tf.get_variable('offset',
+            self.offset = tf.get_variable('offset',
                     shape = [in_dim],
                     initializer = tf.constant_initializer(0.0))
-            self.gamma = tf.get_variable('scale',
+            self.scale = tf.get_variable('scale',
                     shape = [in_dim],
                     initializer=tf.constant_initializer(1.0))
         self.ewma_trainer = ewma_trainer
@@ -57,12 +57,6 @@ class BatchNormalizer(object):
         # initializes the moving average
         self.assigner = None
         self.assigner = self.get_assigner()
-
-    def get_vars(self):
-        return [self.beta, self.gamma]
-
-    def get_weight_decay(self):
-        return tf.nn.l2_loss(self.beta) + tf.nn.l2_loss(self.gamma)
 
     def get_assigner(self):
         """Returns an EWMA apply op that must be invoked after optimization."""
@@ -77,18 +71,21 @@ class BatchNormalizer(object):
             assign_mean = self.mean.assign(mean)
             assign_variance = self.variance.assign(variance)
             with tf.control_dependencies([assign_mean, assign_variance]):
-                return tf.nn.batch_normalization(input, mean, variance, self.beta,
-                        self.gamma, self.epsilon)
+                return tf.nn.batch_normalization(input, mean, variance, self.offset,
+                        self.scale, self.epsilon)
         else:
             mean = self.ewma_trainer.average(self.mean)
             variance = self.ewma_trainer.average(self.variance)
-            local_beta = tf.identity(self.beta)
-            local_gamma = tf.identity(self.gamma)
-            return tf.nn.batch_normalization(input, mean, variance, local_beta,
-                    local_gamma, self.epsilon)
+            local_offset = tf.identity(self.offset)
+            local_scale = tf.identity(self.scale)
+            return tf.nn.batch_normalization(input, mean, variance, local_offset,
+                    local_scale, self.epsilon)
 
-def batch_normalize(input, phase_train, bn_obj):
+def batch_normalize(input, phase_train, name):
+    ema = tf.train.ExponentialMovingAverage(.99)
+    bn = BatchNormalizer(input, ema, name)
+    tf.add_to_collection('batch_norm_average_update',bn.get_assigner())
     return control_flow_ops.cond(phase_train,
-            lambda: bn_obj.normalize(input, True),
-            lambda: bn_obj.normalize(input, False))
+            lambda: [bn.normalize(input, True), bn.get_assigner()],
+            lambda: [bn.normalize(input, False), bn.get_assigner()])
 
