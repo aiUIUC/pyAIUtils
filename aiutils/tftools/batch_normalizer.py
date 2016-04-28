@@ -86,6 +86,5 @@ def batch_normalize(input, phase_train, name):
     bn = BatchNormalizer(input, ema, name)
     tf.add_to_collection('batch_norm_average_update',bn.get_assigner())
     return control_flow_ops.cond(phase_train,
-            lambda: [bn.normalize(input, True), bn.get_assigner()],
-            lambda: [bn.normalize(input, False), bn.get_assigner()])
-
+            lambda: bn.normalize(input, True),
+            lambda: bn.normalize(input, False))
