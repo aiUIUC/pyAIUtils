@@ -5,6 +5,8 @@ import var_collect
 
 
 def test_var_collect():
+    tf.reset_default_graph()
+
     g = tf.Graph()
     with g.as_default():
         with tf.name_scope('scope1') as scope1:
