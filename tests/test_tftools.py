@@ -4,6 +4,7 @@ import tensorflow as tf
 
 from context import layers
 from context import images
+from context import plholder_management
 
 def test_full():
     batch = 1
@@ -120,3 +121,36 @@ def test_resize_image_like():
     #batch, width_height, width_height, channel))
     x_out = sess.run(x_resize, {x:x_})
     assert x_out.shape == s.get_shape()
+
+
+def test_plholder_management():
+    sess = tf.InteractiveSession()
+    plh_mgr = plholder_management.PlholderManager()
+    plh_mgr.add_plholder('word_embed', tf.float64, [10, 10])
+    plh_mgr.add_plholder('sp_ids', tf.int64, sparse=True)
+    plh_mgr.add_plholder('weights', tf.float64, sparse=True)
+
+    plhs = plh_mgr.get_plholders()
+
+    y = tf.nn.embedding_lookup_sparse(plhs['word_embed'], 
+                                      plhs['sp_ids'],
+                                      plhs['weights'])
+
+
+    I = np.array([0, 0, 1, 1])
+    J = np.array([3, 8, 2, 5])
+    V = np.array([3, 8, 2, 5])
+    W = np.array([0.9, 0.1, 0.4, 0.6])
+    sp_ids = sps.coo_matrix((V, (I, J)), shape=(2, 10), dtype=np.int64)
+    weights = sps.coo_matrix((W, (I, J)), shape=(2, 10), dtype=np.float64)    
+    word_embed = np.eye(10,10, dtype=np.float64)
+
+    inputs = {
+        'word_embed': word_embed,
+        'sp_ids': sp_ids,
+        'weights': weights,
+    }
+    feed_dict = plh_mgr.get_feed_dict(inputs)
+    plh_mgr.print_feed_dict(feed_dict)
+    print y.eval(feed_dict)
+
