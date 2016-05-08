@@ -15,14 +15,14 @@ import numpy as np
 import scipy.sparse as sps
 import pdb
 
- 
+
 class PlholderManager():
     """Class for managing placeholders."""
 
     def __init__(self):
         self._plholders = dict()
         self.issparse = dict()
-    
+
     def add_plholder(self, name, dtype, shape=None, sparse=False):
         """Add placeholder.
         
@@ -48,11 +48,11 @@ class PlholderManager():
             name_values = name + '_values'
             name_shape = name + '_shape'
 
-            self._plholders[name_indices] = tf.placeholder(tf.int64, [None, 2], 
+            self._plholders[name_indices] = tf.placeholder(tf.int64, [None, 2],
                                                            name_indices)
-            self._plholders[name_values] = tf.placeholder(dtype, [None], 
+            self._plholders[name_values] = tf.placeholder(dtype, [None],
                                                           name_values)
-            self._plholders[name_shape] = tf.placeholder(tf.int64, [2], 
+            self._plholders[name_shape] = tf.placeholder(tf.int64, [2],
                                                          name_shape)
 
     def get_plholders(self):
@@ -70,9 +70,8 @@ class PlholderManager():
                 plholder_indices = self._plholders[name + '_indices']
                 plholder_values = self._plholders[name + '_values']
                 plholder_shape = self._plholders[name + '_shape']
-                sparse_tensor = tf.SparseTensor(plholder_indices, 
-                                                plholder_values,
-                                                plholder_shape)  
+                sparse_tensor = tf.SparseTensor(
+                    plholder_indices, plholder_values, plholder_shape)
                 plholders[name] = sparse_tensor
 
         return plholders
@@ -101,8 +100,8 @@ class PlholderManager():
                     feed_dict[plholder] = input_value
 
                 else:
-                    I,J,V = sps.find(input_value)
-                 
+                    I, J, V = sps.find(input_value)
+
                     plholder_indices = self._plholders[name + '_indices']
                     plholder_values = self._plholders[name + '_values']
                     plholder_shape = self._plholders[name + '_shape']
@@ -111,26 +110,25 @@ class PlholderManager():
                         np.column_stack([I, J]).astype(np.int64)
                     feed_dict[plholder_shape] = \
                         np.array(input_value.shape).astype(np.int64)
-                    if plholder_values.dtype==tf.int64:
+                    if plholder_values.dtype == tf.int64:
                         feed_dict[plholder_values] = V.astype(np.int64)
                     else:
                         feed_dict[plholder_values] = V
-                   
+
             except KeyError:
                 print "No placeholder with name '{}'".format(name)
                 raise
-                
+
         return feed_dict
 
     def print_feed_dict(self, feed_dict):
         """Prints feed dictionary to standard output neatly."""
 
-        print 'feed_dict={'
+        print 'feed_dict={\n'
         for plh, value in feed_dict.items():
-            print value
-            print '    {}: {}'.format(plh, value)
+            print '{}: \n{}\n'.format(plh, value)
         print '}'
-        
+
     def print_plholders(self, plholders=None):
         """Prints placeholders to standard output neatly."""
 
@@ -141,10 +139,3 @@ class PlholderManager():
         for name, plh in plholders.items():
             print "    '{}': {}".format(name, plh)
         print '}'
-            
-
-
-
-
-    
-        
