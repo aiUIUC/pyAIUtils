@@ -152,5 +152,4 @@ def test_plholder_management():
     }
     feed_dict = plh_mgr.get_feed_dict(inputs)
     plh_mgr.print_feed_dict(feed_dict)
-    print y.eval(feed_dict)
 
