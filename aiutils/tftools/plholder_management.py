@@ -93,7 +93,7 @@ class PlholderManager():
             plholder_shape = self._plholders[name + '_shape']
             sparse_tensor = tf.SparseTensor(
                 plholder_indices, plholder_values, plholder_shape)
-            plholder[name] = sparse_tensor
+            plholder = sparse_tensor
 
         return plholder
 
