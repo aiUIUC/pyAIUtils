@@ -162,3 +162,6 @@ def test_plholder_management():
 
     assert_str = 'test_plholder_management failed'
     assert (np.array_equal(y.eval(feed_dict), y_gt)), assert_str
+
+    assert_str = '__getitem__ method of PlholderManager class failed'
+    assert (plh_mgr['weights'].name=='weights'), assert_str

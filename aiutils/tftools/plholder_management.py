@@ -76,6 +76,27 @@ class PlholderManager():
 
         return plholders
 
+    def __getitem__(self, name):
+        """Returns placeholder with the given name.
+        
+        Usage:
+            plh_mgr = PlholderManager()
+            plh_mgr.add_plholder('var_name', tf.int64, sparse=True)
+            plholder = plh_mgr['var_name']
+        """
+        sparse = self.issparse[name]
+        if not sparse:
+            plholder = self._plholders[name]
+        else:
+            plholder_indices = self._plholders[name + '_indices']
+            plholder_values = self._plholders[name + '_values']
+            plholder_shape = self._plholders[name + '_shape']
+            sparse_tensor = tf.SparseTensor(
+                plholder_indices, plholder_values, plholder_shape)
+            plholder[name] = sparse_tensor
+
+        return plholder
+
     def get_feed_dict(self, inputs):
         """Returns a feed dictionary that can be passed to eval() or run().
 
