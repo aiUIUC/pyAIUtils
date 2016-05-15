@@ -55,27 +55,6 @@ class PlholderManager():
             self._plholders[name_shape] = tf.placeholder(tf.int64, [2],
                                                          name_shape)
 
-    def get_plholders(self):
-        """Returns a dictionary of placeholders with names as keys.
-        
-        The returned dictionary provides an easy way of refering to the 
-        placeholders and passing them to graph construction or evaluation 
-        functions.
-        """
-        plholders = dict()
-        for name, sparse in self.issparse.items():
-            if not sparse:
-                plholders[name] = self._plholders[name]
-            else:
-                plholder_indices = self._plholders[name + '_indices']
-                plholder_values = self._plholders[name + '_values']
-                plholder_shape = self._plholders[name + '_shape']
-                sparse_tensor = tf.SparseTensor(
-                    plholder_indices, plholder_values, plholder_shape)
-                plholders[name] = sparse_tensor
-
-        return plholders
-
     def __getitem__(self, name):
         """Returns placeholder with the given name.
         
@@ -96,6 +75,19 @@ class PlholderManager():
             plholder = sparse_tensor
 
         return plholder
+
+    def get_plholders(self):
+        """Returns a dictionary of placeholders with names as keys.
+        
+        The returned dictionary provides an easy way of refering to the 
+        placeholders and passing them to graph construction or evaluation 
+        functions.
+        """
+        plholders = dict()
+        for name in self.issparse.keys():
+            plholders[name] = self[name]
+
+        return plholders
 
     def get_feed_dict(self, inputs):
         """Returns a feed dictionary that can be passed to eval() or run().
