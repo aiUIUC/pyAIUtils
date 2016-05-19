@@ -5,7 +5,7 @@ import tensorflow as tf
 
 from context import layers
 from context import images
-from context import plholder_management
+from context import placeholder_management
 
 
 def test_full():
@@ -125,18 +125,18 @@ def test_resize_image_like():
     assert x_out.shape == s.get_shape()
 
 
-def test_plholder_management():
+def test_placeholder_management():
     sess = tf.InteractiveSession()
 
-    plh_mgr = plholder_management.PlholderManager()
+    plh_mgr = placeholder_management.PlaceholderManager()
 
     # Add placeholders
-    plh_mgr.add_plholder('word_embed', tf.float64, [10, 10])
-    plh_mgr.add_plholder('sp_ids', tf.int64, sparse=True)
-    plh_mgr.add_plholder('weights', tf.float64, sparse=True)
+    plh_mgr.add_placeholder('word_embed', tf.float64, [10, 10])
+    plh_mgr.add_placeholder('sp_ids', tf.int64, sparse=True)
+    plh_mgr.add_placeholder('weights', tf.float64, sparse=True)
 
     # Get a dictionary of placeholders
-    plhs = plh_mgr.get_plholders()
+    plhs = plh_mgr.get_placeholders()
 
     # Define computation graph
     y = tf.nn.embedding_lookup_sparse(plhs['word_embed'], plhs['sp_ids'],
@@ -160,8 +160,8 @@ def test_plholder_management():
     y_gt = np.array([[0, 0, 0, 0.9, 0, 0, 0, 0, 0.1, 0], \
                      [0, 0, 0.4, 0, 0, 0.6, 0, 0, 0, 0]])
 
-    assert_str = 'test_plholder_management failed'
+    assert_str = 'test_placeholder_management failed'
     assert (np.array_equal(y.eval(feed_dict), y_gt)), assert_str
 
-    assert_str = '__getitem__ method of PlholderManager class failed'
+    assert_str = '__getitem__ method of PlaceholderManager class failed'
     assert ('word_embed' in plh_mgr['word_embed'].name), assert_str

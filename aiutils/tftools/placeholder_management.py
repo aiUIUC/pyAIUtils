@@ -16,14 +16,14 @@ import scipy.sparse as sps
 import pdb
 
 
-class PlholderManager():
+class PlaceholderManager():
     """Class for managing placeholders."""
 
     def __init__(self):
-        self._plholders = dict()
+        self._placeholders = dict()
         self.issparse = dict()
 
-    def add_plholder(self, name, dtype, shape=None, sparse=False):
+    def add_placeholder(self, name, dtype, shape=None, sparse=False):
         """Add placeholder.
         
         If the sparse is True then 3 placeholders are automatically created 
@@ -41,53 +41,53 @@ class PlholderManager():
 
         self.issparse[name] = sparse
         if not sparse:
-            self._plholders[name] = tf.placeholder(dtype, shape, name)
+            self._placeholders[name] = tf.placeholder(dtype, shape, name)
 
         else:
             name_indices = name + '_indices'
             name_values = name + '_values'
             name_shape = name + '_shape'
 
-            self._plholders[name_indices] = tf.placeholder(tf.int64, [None, 2],
+            self._placeholders[name_indices] = tf.placeholder(tf.int64, [None, 2],
                                                            name_indices)
-            self._plholders[name_values] = tf.placeholder(dtype, [None],
+            self._placeholders[name_values] = tf.placeholder(dtype, [None],
                                                           name_values)
-            self._plholders[name_shape] = tf.placeholder(tf.int64, [2],
+            self._placeholders[name_shape] = tf.placeholder(tf.int64, [2],
                                                          name_shape)
 
     def __getitem__(self, name):
         """Returns placeholder with the given name.
         
         Usage:
-            plh_mgr = PlholderManager()
-            plh_mgr.add_plholder('var_name', tf.int64, sparse=True)
-            plholder = plh_mgr['var_name']
+            plh_mgr = PlaceholderManager()
+            plh_mgr.add_placeholder('var_name', tf.int64, sparse=True)
+            placeholder = plh_mgr['var_name']
         """
         sparse = self.issparse[name]
         if not sparse:
-            plholder = self._plholders[name]
+            placeholder = self._placeholders[name]
         else:
-            plholder_indices = self._plholders[name + '_indices']
-            plholder_values = self._plholders[name + '_values']
-            plholder_shape = self._plholders[name + '_shape']
+            placeholder_indices = self._placeholders[name + '_indices']
+            placeholder_values = self._placeholders[name + '_values']
+            placeholder_shape = self._placeholders[name + '_shape']
             sparse_tensor = tf.SparseTensor(
-                plholder_indices, plholder_values, plholder_shape)
-            plholder = sparse_tensor
+                placeholder_indices, placeholder_values, placeholder_shape)
+            placeholder = sparse_tensor
 
-        return plholder
+        return placeholder
 
-    def get_plholders(self):
+    def get_placeholders(self):
         """Returns a dictionary of placeholders with names as keys.
         
         The returned dictionary provides an easy way of refering to the 
         placeholders and passing them to graph construction or evaluation 
         functions.
         """
-        plholders = dict()
+        placeholders = dict()
         for name in self.issparse.keys():
-            plholders[name] = self[name]
+            placeholders[name] = self[name]
 
-        return plholders
+        return placeholders
 
     def get_feed_dict(self, inputs):
         """Returns a feed dictionary that can be passed to eval() or run().
@@ -104,29 +104,29 @@ class PlholderManager():
         feed_dict = dict()
         for name, input_value in inputs.items():
             try:
-                plholder_sparsity = self.issparse[name]
+                placeholder_sparsity = self.issparse[name]
                 input_sparsity = sps.issparse(input_value)
                 assert_str = 'Sparsity of placeholder and input do not match'
-                assert (plholder_sparsity == input_sparsity), assert_str
+                assert (placeholder_sparsity == input_sparsity), assert_str
                 if not input_sparsity:
-                    plholder = self._plholders[name]
-                    feed_dict[plholder] = input_value
+                    placeholder = self._placeholders[name]
+                    feed_dict[placeholder] = input_value
 
                 else:
                     I, J, V = sps.find(input_value)
 
-                    plholder_indices = self._plholders[name + '_indices']
-                    plholder_values = self._plholders[name + '_values']
-                    plholder_shape = self._plholders[name + '_shape']
+                    placeholder_indices = self._placeholders[name + '_indices']
+                    placeholder_values = self._placeholders[name + '_values']
+                    placeholder_shape = self._placeholders[name + '_shape']
 
-                    feed_dict[plholder_indices] = \
+                    feed_dict[placeholder_indices] = \
                         np.column_stack([I, J]).astype(np.int64)
-                    feed_dict[plholder_shape] = \
+                    feed_dict[placeholder_shape] = \
                         np.array(input_value.shape).astype(np.int64)
-                    if plholder_values.dtype == tf.int64:
-                        feed_dict[plholder_values] = V.astype(np.int64)
+                    if placeholder_values.dtype == tf.int64:
+                        feed_dict[placeholder_values] = V.astype(np.int64)
                     else:
-                        feed_dict[plholder_values] = V
+                        feed_dict[placeholder_values] = V
 
             except KeyError:
                 print "No placeholder with name '{}'".format(name)
@@ -134,21 +134,40 @@ class PlholderManager():
 
         return feed_dict
 
-    def print_feed_dict(self, feed_dict):
-        """Prints feed dictionary to standard output neatly."""
+    def feed_dict_debug_string(self, feed_dict):
+        """Returns feed dictionary as a neat string.
 
-        print 'feed_dict={\n'
+        Args:
+            feed_dict (dict): Output of get_feed_dict() or a dictionary with 
+                placeholders as keys and the values to be fed into the graph as 
+                values. 
+        """
+
+        debug_str = 'feed_dict={\n'
         for plh, value in feed_dict.items():
-            print '{}: \n{}\n'.format(plh, value)
-        print '}'
+            debug_str += '{}: \n{}\n'.format(plh, value)
+        debug_str += '}'
+        return debug_str
 
-    def print_plholders(self, plholders=None):
-        """Prints placeholders to standard output neatly."""
+    def placeholder_debug_string(self, placeholders=None):
+        """Returns placeholder information as a neat string.
+        
+        Args:
+            placeholders (dict): Output of get_placeholders() or None in which
+                case self._placeholders is used.
+        """
 
-        if not plholders:
-            plholders = self._plholders
+        if not placeholders:
+            placeholders = self._placeholders
 
-        print 'placeholders={'
-        for name, plh in plholders.items():
-            print "    '{}': {}".format(name, plh)
-        print '}'
+        debug_str = 'placeholders={\n'
+        for name, plh in placeholders.items():
+            debug_str += "    '{}': {}\n".format(name, plh)
+        debug_str += '}'
+        return debug_str
+
+    def __str__(self):
+        """Allows PlaceholderManager object to be used with print or str()."""
+        return self.placeholder_debug_string()
+
+
