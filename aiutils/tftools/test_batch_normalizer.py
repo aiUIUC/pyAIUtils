@@ -115,6 +115,9 @@ def test_batchnorm_train_mode():
         y_eval2 = y.eval(feed_dict={x: x_val2})
         ema_mean_eval2 = ema_mean.eval()
 
+    sess.close()
+    tf.reset_default_graph()
+
     assert_str = 'batch mean and var are not used correctly' + \
                  'during training with batch norm'
     assert (np.all(y_eval1 == np.zeros(input_shape))), assert_str
@@ -153,6 +156,9 @@ def test_batchnorm_test_mode():
 
         y_eval2 = y.eval(feed_dict={x: x_val2})
         ema_mean_eval2 = ema_mean.eval()
+
+    sess.close()
+    tf.reset_default_graph()
 
     assert_str = 'ema mean and var are not used correctly' + \
                  'during testing with batch norm'
