@@ -4,7 +4,7 @@ import tensorflow as tf
 
 import batch_normalizer
 from batch_normalizer import BatchNormalizer
-from batch_normalizer import batch_normalize
+from batch_normalizer import batch_normalize, BatchNorm
 
 
 @pytest.fixture(scope='function')
