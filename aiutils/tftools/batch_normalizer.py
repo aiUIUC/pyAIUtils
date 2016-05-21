@@ -15,6 +15,8 @@ model optimizer force it, e.g., by:
     optimizer = tf.group(update_assignments)
 """
 
+import pdb
+import numpy as np
 import tensorflow as tf
 from tensorflow.python import control_flow_ops
 
@@ -95,3 +97,134 @@ def batch_normalize(input, phase_train, name):
     return control_flow_ops.cond(phase_train,
                                  lambda: bn.normalize(input, True),
                                  lambda: bn.normalize(input, False))
+
+class BatchNorm():
+    def __init__(self, input, training, decay=0.95, epsilon=1e-4, name='bn'):
+        self.batchnorm(input, training, decay, epsilon, name)
+
+    def batchnorm(self, input, training, decay, epsilon, name):
+        with tf.name_scope(name) as bn:
+            rank = len(input.get_shape().as_list())
+            in_dim = input.get_shape().as_list()[-1]
+
+            if rank == 2:
+                axes = [0]
+            elif rank == 4:
+                axes = [0, 1, 2]
+            else:
+                raise ValueError('Input tensor must have rank 2 or 4.')
+
+            self.mean, self.variance = tf.nn.moments(input, axes)
+            self.offset = tf.Variable(initial_value=tf.constant(value=0.0,
+                                                                shape=[in_dim]),
+                                      name='offset')
+            self.scale = tf.Variable(initial_value=tf.constant(value=1.0,
+                                                               shape=[in_dim]),
+                                     name='scale')
+
+            ema = tf.train.ExponentialMovingAverage(decay=decay)
+
+            ema_apply_op = ema.apply([self.mean, self.variance])
+            self.ema_mean = ema.average(self.mean)
+            self.ema_var = ema.average(self.variance)
+
+            if training:
+                with tf.control_dependencies([ema_apply_op]):
+                    self.output = tf.nn.batch_normalization(
+                        input, self.mean, self.variance, self.offset,
+                        self.scale, epsilon, 'output')
+            else:
+                self.output = tf.nn.batch_normalization(
+                    input, self.ema_mean, self.ema_var, self.offset,
+                    self.scale, epsilon, 'output')
+
+    def get_batch_moments(self):
+        return self.mean, self.variance
+
+    def get_ema_moments(self):
+        return self.ema_mean, self.ema_var
+
+    def get_offset_scale(self):
+        return self.offset, self.scale
+
+
+def test_batchnorm_train_mode():
+    batch = 5
+    width = 2
+    height = 3
+    channels = 4
+
+    input_shape = [batch, width, height, channels]
+
+    training = True
+    x = tf.placeholder(tf.float32, input_shape)
+
+    bn = BatchNorm(x, training, name='bn')
+    y = bn.output
+    ema_mean, ema_var = bn.get_ema_moments()
+
+    sess = tf.Session()
+
+    x_val1 = np.ones(input_shape, dtype=np.float32)
+    x_val2 = 2.0 * x_val1
+
+    with sess.as_default():
+        sess.run(tf.initialize_all_variables())
+
+        y_eval1 = y.eval(feed_dict={x: x_val1})
+        ema_mean_eval1 = ema_mean.eval()
+
+        y_eval2 = y.eval(feed_dict={x: x_val2})
+        ema_mean_eval2 = ema_mean.eval()
+
+    assert_str = 'batch mean and var are not used correctly' + \
+                 'during training with batch norm'
+    assert (np.all(y_eval1 == np.zeros(input_shape))), assert_str
+    assert_str = 'batch mean and var are not used correctly' + \
+                 'during training with batch norm'
+    assert (np.all(y_eval2 == np.zeros(input_shape))), assert_str
+    assert_str = 'ema mean is not updated during training with batch norm'
+    assert (not np.all(ema_mean_eval1 == ema_mean_eval2)), assert_str
+
+
+def test_batchnorm_test_mode():
+    batch = 5
+    width = 2
+    height = 3
+    channels = 4
+
+    input_shape = [batch, width, height, channels]
+
+    training = False
+    x = tf.placeholder(tf.float32, input_shape)
+
+    bn = BatchNorm(x, training, name='bn')
+    y = bn.output
+    ema_mean, ema_var = bn.get_ema_moments()
+
+    sess = tf.Session()
+
+    x_val1 = np.ones(input_shape, dtype=np.float32)
+    x_val2 = 2.0 * x_val1
+
+    with sess.as_default():
+        sess.run(tf.initialize_all_variables())
+
+        y_eval1 = y.eval(feed_dict={x: x_val1})
+        ema_mean_eval1 = ema_mean.eval()
+
+        y_eval2 = y.eval(feed_dict={x: x_val2})
+        ema_mean_eval2 = ema_mean.eval()
+
+    assert_str = 'ema mean and var are not used correctly' + \
+                 'during testing with batch norm'
+    assert (not np.all(y_eval1 == np.zeros(input_shape))), assert_str
+    assert_str = 'ema mean and var are not used correctly' + \
+                 'during testing with batch norm'
+    assert (not np.all(y_eval2 == np.zeros(input_shape))), assert_str
+    assert_str = 'ema mean is updated during testing with batch norm'
+    assert (np.all(ema_mean_eval1 == ema_mean_eval2)), assert_str
+
+if __name__ == '__main__':
+    test_batchnorm_train_mode()
+    test_batchnorm_test_mode()
