@@ -9,6 +9,19 @@ to standard output.
 More importantly, the class allows sparse scipy matrices to 
 be passed into graphs (Tensorflow currently allows only dense matrices to be fed
 into placeholders).
+
+Usage:
+    pm = PlaceholderManager()
+    pm.add_placeholder('x1', tf.float64, [1,2])
+    pm.add_placeholder('x2', tf.float64, [1,2])
+
+    # Use placeholders in your graph
+    y = pm['x1'] + pm['x2']
+   
+    # Create feed dictionary
+    feed_dict = pm.get_feed_dict({'x1': np.array([3.0, 4.0]), 
+                                  'x2': np.array([5.0, 2.0])})
+    y.eval(feed_dict)
 """
 import tensorflow as tf
 import numpy as np
@@ -94,6 +107,18 @@ class PlaceholderManager():
 
         This method creates a feed dictionary from provided inputs that can be
         passed directly into eval() or run() routines in Tensorflow. 
+
+        Usage:
+            pm = PlaceholderManager()
+            pm.add_placeholder('x', tf.float64, [1,2])
+            pm.add_placeholder('y', tf.float64, [1,2])
+            z = pm['x'] + pm['y']
+            inputs = {
+                'x': np.array([3.0, 4.0]), 
+                'y': np.array([5.0, 2.0])
+            }
+            feed_dict = pm.get_feed_dict(inputs)
+            z.eval(feed_dict)
 
         Args:
             inputs (dict): A dictionary with placeholder names as keys and the 
