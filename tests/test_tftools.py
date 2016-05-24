@@ -1,9 +1,12 @@
 import numpy as np
+import scipy.sparse as sps
 import pytest
 import tensorflow as tf
 
 from context import layers
 from context import images
+from context import placeholder_management
+
 
 def test_full():
     batch = 1
@@ -118,5 +121,47 @@ def test_resize_image_like():
     sess.run(tf.initialize_all_variables())
     x_ = np.float32(np.random.rand(*input_shape))
     #batch, width_height, width_height, channel))
-    x_out = sess.run(x_resize, {x:x_})
+    x_out = sess.run(x_resize, {x: x_})
     assert x_out.shape == s.get_shape()
+
+
+def test_placeholder_management():
+    sess = tf.InteractiveSession()
+
+    plh_mgr = placeholder_management.PlaceholderManager()
+
+    # Add placeholders
+    plh_mgr.add_placeholder('word_embed', tf.float64, [10, 10])
+    plh_mgr.add_placeholder('sp_ids', tf.int64, sparse=True)
+    plh_mgr.add_placeholder('weights', tf.float64, sparse=True)
+
+    # Get a dictionary of placeholders
+    plhs = plh_mgr.get_placeholders()
+
+    # Define computation graph
+    y = tf.nn.embedding_lookup_sparse(plhs['word_embed'], plhs['sp_ids'],
+                                      plhs['weights'])
+
+    # Create data to be fed into the graph
+    I = np.array([0, 0, 1, 1])
+    J = np.array([3, 8, 2, 5])
+    V = np.array([3, 8, 2, 5])
+    W = np.array([0.9, 0.1, 0.4, 0.6])
+    sp_ids = sps.coo_matrix((V, (I, J)), shape=(2, 10), dtype=np.int64)
+    weights = sps.coo_matrix((W, (I, J)), shape=(2, 10), dtype=np.float64)
+    word_embed = np.eye(10, 10, dtype=np.float64)
+
+    # Create input dict
+    inputs = {'word_embed': word_embed, 'sp_ids': sp_ids, 'weights': weights, }
+
+    # Create feed dictionary from inputs
+    feed_dict = plh_mgr.get_feed_dict(inputs)
+
+    y_gt = np.array([[0, 0, 0, 0.9, 0, 0, 0, 0, 0.1, 0], \
+                     [0, 0, 0.4, 0, 0, 0.6, 0, 0, 0, 0]])
+
+    assert_str = 'test_placeholder_management failed'
+    assert (np.array_equal(y.eval(feed_dict), y_gt)), assert_str
+
+    assert_str = '__getitem__ method of PlaceholderManager class failed'
+    assert ('word_embed' in plh_mgr['word_embed'].name), assert_str
