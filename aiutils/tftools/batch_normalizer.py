@@ -147,3 +147,49 @@ class BatchNorm():
     def get_offset_scale(self):
         return self.offset, self.scale
 
+def batchnorm_failing_case():
+    batch = 5
+    width = 2
+    height = 3
+    channels = 4
+
+    input_shape = [batch, width, height, channels]
+
+    training = True
+    x = tf.placeholder(tf.float32, input_shape)
+    
+    g = tf.Graph()
+    with g.as_default():
+        bn = BatchNorm(x, training, name='bn')
+        y = bn.output
+        ema_mean, ema_var = bn.get_ema_moments()
+
+    sess = tf.Session(graph=g)
+
+    x_val1 = np.ones(input_shape, dtype=np.float32)
+    x_val2 = 2.0 * x_val1
+
+    with sess.as_default():
+        sess.run(tf.initialize_all_variables())
+
+        y_eval1 = y.eval(feed_dict={x: x_val1})
+        ema_mean_eval1 = ema_mean.eval()
+
+        y_eval2 = y.eval(feed_dict={x: x_val2})
+        ema_mean_eval2 = ema_mean.eval()
+
+    sess.close()
+    tf.reset_default_graph()
+
+    assert_str = 'batch mean and var are not used correctly' + \
+                 'during training with batch norm'
+    assert (np.all(y_eval1 == np.zeros(input_shape))), assert_str
+    assert_str = 'batch mean and var are not used correctly' + \
+                 'during training with batch norm'
+    assert (np.all(y_eval2 == np.zeros(input_shape))), assert_str
+    assert_str = 'ema mean is not updated during training with batch norm'
+    assert (not np.all(ema_mean_eval1 == ema_mean_eval2)), assert_str
+
+if __name__=='__main__':
+    batchnorm_failing_case()
+
