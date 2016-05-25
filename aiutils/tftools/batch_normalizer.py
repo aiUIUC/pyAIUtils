@@ -18,6 +18,7 @@ model optimizer force it, e.g., by:
 import tensorflow as tf
 from tensorflow.python import control_flow_ops
 
+
 class BatchNormalizer(object):
     """Helper class that groups the normalization logic and variables.
 
@@ -40,17 +41,21 @@ class BatchNormalizer(object):
         else:
             raise ValueError('Input tensor must have rank 2 or 4.')
 
-        self.mean = tf.Variable(tf.constant(0.0, shape=[in_dim]),
-                trainable=False)
-        self.variance = tf.Variable(tf.constant(1.0, shape=[in_dim]),
-                trainable=False)
+        self.mean = tf.Variable(
+            tf.constant(0.0, shape=[in_dim]),
+            trainable=False)
+        self.variance = tf.Variable(
+            tf.constant(1.0, shape=[in_dim]),
+            trainable=False)
         with tf.variable_scope(name):
-            self.offset = tf.get_variable('offset',
-                    shape = [in_dim],
-                    initializer = tf.constant_initializer(0.0))
-            self.scale = tf.get_variable('scale',
-                    shape = [in_dim],
-                    initializer=tf.constant_initializer(1.0))
+            self.offset = tf.get_variable(
+                'offset',
+                shape=[in_dim],
+                initializer=tf.constant_initializer(0.0))
+            self.scale = tf.get_variable(
+                'scale',
+                shape=[in_dim],
+                initializer=tf.constant_initializer(1.0))
         self.ewma_trainer = ewma_trainer
         self.epsilon = epsilon
 
@@ -71,20 +76,22 @@ class BatchNormalizer(object):
             assign_mean = self.mean.assign(mean)
             assign_variance = self.variance.assign(variance)
             with tf.control_dependencies([assign_mean, assign_variance]):
-                return tf.nn.batch_normalization(input, mean, variance, self.offset,
-                        self.scale, self.epsilon)
+                return tf.nn.batch_normalization(input, mean, variance,
+                                                 self.offset, self.scale,
+                                                 self.epsilon)
         else:
             mean = self.ewma_trainer.average(self.mean)
             variance = self.ewma_trainer.average(self.variance)
             local_offset = tf.identity(self.offset)
             local_scale = tf.identity(self.scale)
-            return tf.nn.batch_normalization(input, mean, variance, local_offset,
-                    local_scale, self.epsilon)
+            return tf.nn.batch_normalization(
+                input, mean, variance, local_offset, local_scale, self.epsilon)
+
 
 def batch_normalize(input, phase_train, name):
     ema = tf.train.ExponentialMovingAverage(.99)
     bn = BatchNormalizer(input, ema, name)
-    tf.add_to_collection('batch_norm_average_update',bn.get_assigner())
+    tf.add_to_collection('batch_norm_average_update', bn.get_assigner())
     return control_flow_ops.cond(phase_train,
-            lambda: bn.normalize(input, True),
-            lambda: bn.normalize(input, False))
+                                 lambda: bn.normalize(input, True),
+                                 lambda: bn.normalize(input, False))
