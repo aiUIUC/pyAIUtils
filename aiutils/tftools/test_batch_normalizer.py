@@ -27,7 +27,8 @@ def test_batch_normalize_construct_2(graph):
         x = tf.placeholder(tf.float32, input_shape)
         ema = tf.train.ExponentialMovingAverage(decay=.9)
         bn = BatchNormalizer(x, ema, "batch_norm1")
-        assert(bn)
+        assert (bn)
+
 
 def test_batch_normalize_construct_4(graph):
     g = graph[0]
@@ -36,7 +37,8 @@ def test_batch_normalize_construct_4(graph):
         x = tf.placeholder(tf.float32, input_shape)
         ema = tf.train.ExponentialMovingAverage(decay=.9)
         bn = BatchNormalizer(x, ema, "batch_norm2")
-        assert(bn)
+        assert (bn)
+
 
 def test_batch_normalize_construct_3(graph):
     g = graph[0]
@@ -61,8 +63,9 @@ def test_batch_normalize(graph):
 
         sess = graph[1]
         sess.run(tf.initialize_all_variables())
-        y = sess.run(normalize, {x:x_val})
-        assert(y.shape == x_val.shape)
+        y = sess.run(normalize, {x: x_val})
+        assert (y.shape == x_val.shape)
+
 
 def test_batch_normalize_fcn(graph):
     g = graph[0]
@@ -73,12 +76,12 @@ def test_batch_normalize_fcn(graph):
 
         normalize = batch_normalize(x, phase_train, 'batch_norm4')
 
-        assert(len(tf.get_collection('batch_norm_average_update'))==1)
+        assert (len(tf.get_collection('batch_norm_average_update')) == 1)
 
         x_val = np.random.rand(*input_shape)
 
         sess = graph[1]
         sess.run(tf.initialize_all_variables())
         # Just verify that this doesn't error, not really looking for any specific results
-        y1 = sess.run(normalize, {x:x_val, phase_train:True})
-        y2 = sess.run(normalize, {x:x_val, phase_train:False})
+        y1 = sess.run(normalize, {x: x_val, phase_train: True})
+        y2 = sess.run(normalize, {x: x_val, phase_train: False})
