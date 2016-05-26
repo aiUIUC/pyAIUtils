@@ -54,13 +54,13 @@ def test_var_collect_type():
             a = tf.Variable(tf.constant(1.0, shape=[1]), name='a', trainable=False)
 
     vars_all_1 = var_collect.collect_scope('scope1', graph=g)
-    assertEqual(len(vars_all_1), 3)
+    assert(len(vars_all_1) == 3)
     vars_trainable_1 = var_collect.collect_scope('scope1', graph=g, var_type=tf.GraphKeys.TRAINABLE_VARIABLES)
     assertEqual(len(vars_trainable_1), 1)
     vars_all_2 = var_collect.collect_scope('scope2', graph=g)
-    assertEqual(len(vars_all_1), 1)
+    assert(len(vars_all_1) == 1)
     vars_trainable_2 = var_collect.collect_scope('scope2', graph=g, var_type=tf.GraphKeys.TRAINABLE_VARIABLES)
-    assertEqual(len(vars_trainable_1), 0)
+    assert(len(vars_trainable_1) == 0)
 
 if __name__ == '__main__':
     #    var_collection_example()
