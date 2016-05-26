@@ -58,9 +58,9 @@ def test_var_collect_type():
     vars_trainable_1 = var_collect.collect_scope('scope1', graph=g, var_type=tf.GraphKeys.TRAINABLE_VARIABLES)
     assert(len(vars_trainable_1) == 1)
     vars_all_2 = var_collect.collect_scope('scope2', graph=g)
-    assert(len(vars_all_1) == 1)
+    assert(len(vars_all_2) == 1)
     vars_trainable_2 = var_collect.collect_scope('scope2', graph=g, var_type=tf.GraphKeys.TRAINABLE_VARIABLES)
-    assert(len(vars_trainable_1) == 0)
+    assert(len(vars_trainable_2) == 0)
 
 if __name__ == '__main__':
     #    var_collection_example()
