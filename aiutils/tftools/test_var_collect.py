@@ -1,4 +1,5 @@
 import tensorflow as tf
+import pytest
 import pdb
 
 import var_collect
@@ -47,21 +48,39 @@ def test_var_collect_type():
     g = tf.Graph()
     with g.as_default():
         with tf.name_scope('scope1') as scope1:
-            a = tf.Variable(tf.constant(1.0, shape=[1]), name='a', trainable=True)
-            b = tf.Variable(tf.constant(1.0, shape=[1]), name='b', trainable=False)
-            c = tf.Variable(tf.constant(1.0, shape=[1]), name='c', trainable=False)
+            a = tf.Variable(
+                tf.constant(1.0, shape=[1]),
+                name='a', trainable=True)
+            b = tf.Variable(
+                tf.constant(1.0, shape=[1]),
+                name='b',
+                trainable=False)
+            c = tf.Variable(
+                tf.constant(1.0, shape=[1]),
+                name='c',
+                trainable=False)
         with tf.name_scope('scope2') as scope2:
-            a = tf.Variable(tf.constant(1.0, shape=[1]), name='a', trainable=False)
+            a = tf.Variable(
+                tf.constant(1.0, shape=[1]),
+                name='a',
+                trainable=False)
 
     vars_all_1 = var_collect.collect_scope('scope1', graph=g)
-    assert(len(vars_all_1) == 3)
-    vars_trainable_1 = var_collect.collect_scope('scope1', graph=g, var_type=tf.GraphKeys.TRAINABLE_VARIABLES)
-    assert(len(vars_trainable_1) == 1)
+    assert (len(vars_all_1) == 3)
+    vars_trainable_1 = var_collect.collect_scope(
+        'scope1', graph=g,
+        var_type=tf.GraphKeys.TRAINABLE_VARIABLES)
+    assert (len(vars_trainable_1) == 1)
     vars_all_2 = var_collect.collect_scope('scope2', graph=g)
-    assert(len(vars_all_2) == 1)
-    vars_trainable_2 = var_collect.collect_scope('scope2', graph=g, var_type=tf.GraphKeys.TRAINABLE_VARIABLES)
-    assert(len(vars_trainable_2) == 0)
+    assert (len(vars_all_2) == 1)
+    with pytest.raises(AssertionError):
+        vars_trainable_2 = var_collect.collect_scope(
+            'scope2',
+            graph=g,
+            var_type=tf.GraphKeys.TRAINABLE_VARIABLES)
+
 
 if __name__ == '__main__':
     #    var_collection_example()
     test_var_collect()
+    test_var_collect_type()
