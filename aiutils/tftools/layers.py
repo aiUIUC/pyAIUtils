@@ -27,7 +27,7 @@ def full(input, out_dim, name, gain=np.sqrt(2), func=tf.nn.relu, reuse_vars=Fals
     in_dim = input.get_shape().as_list()[-1]
     stddev = 1.0 * gain / np.sqrt(in_dim)
     with tf.variable_scope(name, reuse=reuse_vars):
-        w_init = tf.random_normal_initializer(stddev)
+        w_init = tf.random_normal_initializer(0.0, stddev)
         b_init = tf.constant_initializer()
         w = tf.get_variable('w', shape=[in_dim, out_dim], initializer=w_init)
         b = tf.get_variable('b', shape=[out_dim], initializer=b_init)
@@ -78,7 +78,7 @@ def conv2d(input,
     in_dim = input.get_shape().as_list()[-1]
     stddev = 1.0 * gain / np.sqrt(filter_size * filter_size * in_dim)
     with tf.variable_scope(name, reuse=reuse_vars):
-        w_init = tf.random_normal_initializer(stddev)
+        w_init = tf.random_normal_initializer(0.0, stddev)
         b_init = tf.constant_initializer()
         w = tf.get_variable('w',
                             shape=[filter_size, filter_size, in_dim, out_dim],
