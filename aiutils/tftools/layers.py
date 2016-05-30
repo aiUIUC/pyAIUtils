@@ -27,7 +27,7 @@ def full(input, out_dim, name, gain=np.sqrt(2), func=tf.nn.relu, reuse_vars=Fals
     in_dim = input.get_shape().as_list()[-1]
     stddev = 1.0 * gain / np.sqrt(in_dim)
     with tf.variable_scope(name, reuse=reuse_vars):
-        w_init = tf.random_normal_initializer(0.0, stddev)
+        w_init = tf.random_normal_initializer(stddev=stddev)
         b_init = tf.constant_initializer()
         w = tf.get_variable('w', shape=[in_dim, out_dim], initializer=w_init)
         b = tf.get_variable('b', shape=[out_dim], initializer=b_init)
@@ -78,7 +78,7 @@ def conv2d(input,
     in_dim = input.get_shape().as_list()[-1]
     stddev = 1.0 * gain / np.sqrt(filter_size * filter_size * in_dim)
     with tf.variable_scope(name, reuse=reuse_vars):
-        w_init = tf.random_normal_initializer(0.0, stddev)
+        w_init = tf.random_normal_initializer(stddev=stddev)
         b_init = tf.constant_initializer()
         w = tf.get_variable('w',
                             shape=[filter_size, filter_size, in_dim, out_dim],
@@ -125,10 +125,10 @@ def batch_norm(input, name, reuse_vars=False):
         mean, variance = tf.nn.moments(input, axes)
         offset = tf.get_variable('offset',
                                  shape=[in_dim],
-                                 initializer=tf.constant_initializer(0.0))
+                                 initializer=tf.constant_initializer(value=0.0))
         scale = tf.get_variable('scale',
                                 shape=[in_dim],
-                                initializer=tf.constant_initializer(1.0))
+                                initializer=tf.constant_initializer(value=1.0))
         output = tf.nn.batch_normalization(input, mean, variance, offset,
                                            scale, 1e-5)
 
