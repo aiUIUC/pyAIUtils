@@ -86,6 +86,7 @@ def test_batch_normalize_fcn(graph):
         y1 = sess.run(normalize, {x: x_val, phase_train: True})
         y2 = sess.run(normalize, {x: x_val, phase_train: False})
 
+
 def test_batchnorm_train_mode():
     batch = 5
     width = 2
@@ -94,29 +95,28 @@ def test_batchnorm_train_mode():
 
     input_shape = [batch, width, height, channels]
 
-    training = True
-    x = tf.placeholder(tf.float32, input_shape)
-
-    bn = BatchNorm(x, training, name='bn')
-    y = bn.output
-    ema_mean, ema_var = bn.get_ema_moments()
-
-    sess = tf.Session()
+    g = tf.Graph()
+    with g.as_default():
+        training = tf.placeholder(tf.bool, [])
+        x = tf.placeholder(tf.float32, input_shape)
+        bn = BatchNorm(x, training, name='bn')
+        y = bn.output
+        ema_mean, ema_var = bn.get_ema_moments()
+        initializer = tf.initialize_all_variables()
 
     x_val1 = np.ones(input_shape, dtype=np.float32)
     x_val2 = 2.0 * x_val1
 
+    sess = tf.Session(graph=g)
     with sess.as_default():
-        sess.run(tf.initialize_all_variables())
-
-        y_eval1 = y.eval(feed_dict={x: x_val1})
+        sess.run(initializer)
+        y_eval1 = y.eval(feed_dict={x: x_val1, training: True})
         ema_mean_eval1 = ema_mean.eval()
 
-        y_eval2 = y.eval(feed_dict={x: x_val2})
+        y_eval2 = y.eval(feed_dict={x: x_val2, training: True})
         ema_mean_eval2 = ema_mean.eval()
 
     sess.close()
-    tf.reset_default_graph()
 
     assert_str = 'batch mean and var are not used correctly' + \
                  'during training with batch norm'
@@ -136,29 +136,29 @@ def test_batchnorm_test_mode():
 
     input_shape = [batch, width, height, channels]
 
-    training = False
-    x = tf.placeholder(tf.float32, input_shape)
-
-    bn = BatchNorm(x, training, name='bn')
-    y = bn.output
-    ema_mean, ema_var = bn.get_ema_moments()
-
-    sess = tf.Session()
+    g = tf.Graph()
+    with g.as_default():
+        training = tf.placeholder(tf.bool, [])
+        x = tf.placeholder(tf.float32, input_shape)
+        bn = BatchNorm(x, training, name='bn')
+        y = bn.output
+        ema_mean, ema_var = bn.get_ema_moments()
+        initializer = tf.initialize_all_variables()
 
     x_val1 = np.ones(input_shape, dtype=np.float32)
     x_val2 = 2.0 * x_val1
 
+    sess = tf.Session(graph=g)
     with sess.as_default():
-        sess.run(tf.initialize_all_variables())
+        sess.run(initializer)
 
-        y_eval1 = y.eval(feed_dict={x: x_val1})
+        y_eval1 = y.eval(feed_dict={x: x_val1, training: False})
         ema_mean_eval1 = ema_mean.eval()
 
-        y_eval2 = y.eval(feed_dict={x: x_val2})
+        y_eval2 = y.eval(feed_dict={x: x_val2, training: False})
         ema_mean_eval2 = ema_mean.eval()
 
     sess.close()
-    tf.reset_default_graph()
 
     assert_str = 'ema mean and var are not used correctly' + \
                  'during testing with batch norm'
