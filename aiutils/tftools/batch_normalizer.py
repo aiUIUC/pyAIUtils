@@ -98,6 +98,7 @@ def batch_normalize(input, phase_train, name):
                                  lambda: bn.normalize(input, True),
                                  lambda: bn.normalize(input, False))
 
+
 class BatchNorm():
     def __init__(self, input, training, decay=0.95, epsilon=1e-4, name='bn'):
         self.decay = decay
@@ -119,14 +120,12 @@ class BatchNorm():
                 raise ValueError('Input tensor must have rank 2 or 4.')
 
             self.mean, self.variance = tf.nn.moments(input, axes)
-            self.offset = tf.Variable(
-                initial_value=tf.constant(value=0.0,
-                                          shape=[in_dim]),
-                name='offset')
-            self.scale = tf.Variable(
-                initial_value=tf.constant(value=1.0,
-                                          shape=[in_dim]),
-                name='scale')
+            self.offset = tf.Variable(initial_value=tf.constant(
+                value=0.0, shape=[in_dim]),
+                                      name='offset')
+            self.scale = tf.Variable(initial_value=tf.constant(value=1.0,
+                                                               shape=[in_dim]),
+                                     name='scale')
 
             self.ema = tf.train.ExponentialMovingAverage(decay=self.decay)
 
