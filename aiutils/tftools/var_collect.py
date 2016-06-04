@@ -51,9 +51,10 @@ def collect_all_trainable(graph=None):
     return var_list
 
 
-def collect_list(var_name_list, graph=None):
+def collect_list(var_name_list, graph=None, var_type=tf.GraphKeys.VARIABLES):
     var_dict = dict()
     for var_name in var_name_list:
-        var_dict[var_name] = collect_name(var_name, graph=graph)
+        var_dict[var_name] = collect_name(
+            var_name, graph=graph, var_type=var_type)
 
     return var_dict
