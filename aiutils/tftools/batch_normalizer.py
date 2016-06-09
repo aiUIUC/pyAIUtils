@@ -5,14 +5,13 @@ from tensorflow.python import control_flow_ops
 
 
 class BatchNorm():
-    def __init__(
-            self, 
-            input, 
-            training, 
-            decay=0.95, 
-            epsilon=1e-4, 
-            name='bn', 
-            reuse_vars=False):
+    def __init__(self,
+                 input,
+                 training,
+                 decay=0.95,
+                 epsilon=1e-4,
+                 name='bn',
+                 reuse_vars=False):
 
         self.decay = decay
         self.epsilon = epsilon

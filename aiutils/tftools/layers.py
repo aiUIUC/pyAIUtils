@@ -2,7 +2,13 @@ import numpy as np
 import tensorflow as tf
 from batch_normalizer import BatchNorm
 
-def full(input, out_dim, name, gain=np.sqrt(2), func=tf.nn.relu, reuse_vars=False):
+
+def full(input,
+         out_dim,
+         name,
+         gain=np.sqrt(2),
+         func=tf.nn.relu,
+         reuse_vars=False):
     """ Fully connected layer helper.
 
     Creates weights and bias parameters with good initial values. Then applies the matmul op and func.
@@ -93,19 +99,28 @@ def conv2d(input,
     return output
 
 
-def batch_norm(
-        input, 
-        training, 
-        decay=0.95, 
-        epsilon=1e-4,
-        name='bn', 
-        reuse_vars=False):
+def batch_norm(input,
+               training,
+               decay=0.95,
+               epsilon=1e-4,
+               name='bn',
+               reuse_vars=False):
+    """Adds a batch normalization layer.
 
-    bn = BatchNorm(input, 
-                   training,
-                   decay,
-                   epsilon,
-                   name)
+    Args:
+        input (tensor): Tensor to be batch normalized
+        training (bool tensor): Boolean tensor of shape []
+        decay (float): Decay used for exponential moving average
+        epsilon (float): Small constant added to variance to prevent
+            division of the form 0/0
+        name (string): variable scope name
+        reuse_vars (bool): Value passed to reuse keyword argument of 
+            tf.variable_scope
 
-    return bn.output
-    
+    Returns:
+        output (tensor): Batch normalized output tensor
+    """
+    bn = BatchNorm(input, training, decay, epsilon, name)
+    output = bn.output
+
+    return output
