@@ -3,7 +3,7 @@ import pytest
 import tensorflow as tf
 
 from batch_normalizer import BatchNorm
-from layers import batch_norm
+
 
 def test_batchnorm_train_mode():
     batch = 5

@@ -1,20 +1,3 @@
-"""A helper class for managing batch normalization state.
-
-This class is designed to simplify adding batch normalization
-(http://arxiv.org/pdf/1502.03167v3.pdf) to your model by
-managing the state variables associated with it.
-
-Important use note:  The function get_assigner() returns
-an op that must be executed to save the updated state.
-A suggested way to do this is to make execution of the
-model optimizer force it, e.g., by:
-
-  update_assignments = tf.group(bn1.get_assigner(),
-                                bn2.get_assigner())
-  with tf.control_dependencies([optimizer]):
-    optimizer = tf.group(update_assignments)
-"""
-
 import pdb
 import numpy as np
 import tensorflow as tf
