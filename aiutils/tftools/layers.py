@@ -1,6 +1,6 @@
 import numpy as np
 import tensorflow as tf
-
+from batch_normalizer import BatchNorm
 
 def full(input, out_dim, name, gain=np.sqrt(2), func=tf.nn.relu, reuse_vars=False):
     """ Fully connected layer helper.
@@ -93,43 +93,20 @@ def conv2d(input,
     return output
 
 
-def batch_norm(input, name, reuse_vars=False):
-    """ Batch norm layer helper.
+def batch_norm(
+        input, 
+        training, 
+        decay=0.95, 
+        epsilon=1e-4,
+        name='bn', 
+        reuse_vars=False):
 
-    Gets mean and variance, and creates offset and scale parameters with good initial values.
-    Then applies the batch_normalization op.
+    bn = BatchNorm(input, 
+                   training,
+                   decay,
+                   epsilon,
+                   name)
 
-    Args:
-      input (tensor): Input to the layer.
-        Should have shape `[batch, in_dim]` or `[batch, in_height, in_width, in_dim]`.
-        Must be one of the following types: `float32`, `float64`.
-      name (str): Name used by the `tf.variable_scope`.
-      reuse_vars (bool): Determine whether the layer should reuse variables
-        or construct new ones.  Equivalent to setting reuse in variable_scope
+    return bn.output
+    
 
-    Returns:
-      output (tensor): Batch normalized activations.
-        Will have the same shape as input.
-    """
-    rank = len(input.get_shape().as_list())
-    in_dim = input.get_shape().as_list()[-1]
-
-    if rank == 2:
-        axes = [0]
-    elif rank == 4:
-        axes = [0, 1, 2]
-    else:
-        raise ValueError('Input tensor must have rank 2 or 4.')
-
-    with tf.variable_scope(name, reuse=reuse_vars):
-        mean, variance = tf.nn.moments(input, axes)
-        offset = tf.get_variable('offset',
-                                 shape=[in_dim],
-                                 initializer=tf.constant_initializer(0.0))
-        scale = tf.get_variable('scale',
-                                shape=[in_dim],
-                                initializer=tf.constant_initializer(1.0))
-        output = tf.nn.batch_normalization(input, mean, variance, offset,
-                                           scale, 1e-5)
-
-    return output

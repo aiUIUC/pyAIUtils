@@ -54,12 +54,13 @@ def test_batch_norm_2d():
     input_shape = [batch, in_dim]
 
     x = tf.placeholder(tf.float32, input_shape)
-    y = layers.batch_norm(x, '2d')
+    training = tf.placeholder(tf.bool, []) 
+    y = layers.batch_norm(x, training)
     sess = tf.Session()
     sess.run(tf.initialize_all_variables())
 
     x_ = np.float32(np.random.randn(*input_shape))
-    y_hat = sess.run(y, feed_dict={x: x_})
+    y_hat = sess.run(y, feed_dict={x: x_, training: True})
 
     assert y_hat.shape == x_.shape
 
@@ -74,12 +75,13 @@ def test_batch_norm_4d():
     input_shape = [batch, width, height, in_dim]
 
     x = tf.placeholder(tf.float32, input_shape)
-    y = layers.batch_norm(x, '4d')
+    training = tf.placeholder(tf.bool, []) 
+    y = layers.batch_norm(x, training)
     sess = tf.Session()
     sess.run(tf.initialize_all_variables())
 
     x_ = np.float32(np.random.randn(*input_shape))
-    y_hat = sess.run(y, feed_dict={x: x_})
+    y_hat = sess.run(y, feed_dict={x: x_, training: True})
 
     assert y_hat.shape == x_.shape
 
@@ -93,8 +95,9 @@ def test_batch_norm_3d():
     input_shape = [batch, width, in_dim]
 
     x = tf.placeholder(tf.float32, input_shape)
+    training = tf.placeholder(tf.bool, []) 
     with pytest.raises(ValueError):
-        y = layers.batch_norm(x, '4d')
+        y = layers.batch_norm(x, training)
 
 
 def test_resize_image_like():
