@@ -11,7 +11,8 @@ def full(input,
          reuse_vars=False):
     """ Fully connected layer helper.
 
-    Creates weights and bias parameters with good initial values. Then applies the matmul op and func.
+    Creates weights and bias parameters with good initial values. 
+    Then applies the matmul op and func.
 
     Args:
       input (tensor): Input to the layer.
@@ -57,7 +58,8 @@ def conv2d(input,
            reuse_vars=False):
     """ Conv2d layer helper.
 
-    Creates filter and bias parameters with good initial values. Then applies the conv op and func.
+    Creates filter and bias parameters with good initial values. 
+    Then applies the conv op and func.
 
     Args:
       input (tensor): Input to the layer.
@@ -100,7 +102,7 @@ def conv2d(input,
 
 
 def batch_norm(input,
-               training,
+               training=tf.constant(True),
                decay=0.95,
                epsilon=1e-4,
                name='bn',
@@ -115,12 +117,13 @@ def batch_norm(input,
             division of the form 0/0
         name (string): variable scope name
         reuse_vars (bool): Value passed to reuse keyword argument of 
-            tf.variable_scope
+            tf.variable_scope. This only reuses the offset and scale variables, 
+            not the moving average shadow variable.
 
     Returns:
         output (tensor): Batch normalized output tensor
     """
-    bn = BatchNorm(input, training, decay, epsilon, name)
+    bn = BatchNorm(input, training, decay, epsilon, name, reuse_vars)
     output = bn.output
 
     return output

@@ -1,5 +1,3 @@
-import pdb
-import numpy as np
 import tensorflow as tf
 from tensorflow.python import control_flow_ops
 
