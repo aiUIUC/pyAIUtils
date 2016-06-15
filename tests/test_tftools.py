@@ -307,3 +307,42 @@ def test_var_collect():
     def_graph_vars = var_collect.collect_all()
     assert (list_cmp(['d', 'e'], def_graph_vars)), \
         'collect_all failed on default graph'
+
+    tf.reset_default_graph()
+
+
+def test_var_collect_type():
+    g = tf.Graph()
+    with g.as_default():
+        with tf.name_scope('scope1') as scope1:
+            a = tf.Variable(
+                tf.constant(1.0, shape=[1]),
+                name='a', trainable=True)
+            b = tf.Variable(
+                tf.constant(1.0, shape=[1]),
+                name='b',
+                trainable=False)
+            c = tf.Variable(
+                tf.constant(1.0, shape=[1]),
+                name='c',
+                trainable=False)
+        with tf.name_scope('scope2') as scope2:
+            a = tf.Variable(
+                tf.constant(1.0, shape=[1]),
+                name='a',
+                trainable=False)
+
+    vars_all_1 = var_collect.collect_scope('scope1', graph=g)
+    assert (len(vars_all_1) == 3)
+    vars_trainable_1 = var_collect.collect_scope(
+        'scope1', graph=g,
+        var_type=tf.GraphKeys.TRAINABLE_VARIABLES)
+    assert (len(vars_trainable_1) == 1)
+    vars_all_2 = var_collect.collect_scope('scope2', graph=g)
+    assert (len(vars_all_2) == 1)
+    with pytest.raises(AssertionError):
+        vars_trainable_2 = var_collect.collect_scope(
+            'scope2',
+            graph=g,
+            var_type=tf.GraphKeys.TRAINABLE_VARIABLES)
+
