@@ -127,3 +127,28 @@ def batch_norm(input,
     output = bn.output
 
     return output
+
+
+def dropout(input, training=True, keep_prob=.8):
+    """Adds a dropout layer, which is optionally active for ease of
+    constructing training and test graphs which use the same code.
+
+    Args:
+        input (tensor): Tensor to droupout.
+        training (bool or bool tensor): Determines whether the dropout op is active
+        keep_prob (float): Deterimnes how much of the vector to not dropout
+
+    Returns:
+        (tensor): input tensor, or dropped out tensor depending on training.
+    """
+
+    if type(training) is type(True):
+        if training:
+            return tf.nn.dropout(input, keep_prob)
+        else:
+            return input
+    else:
+        return tf.cond(training,
+                lambda: tf.nn.dropout(input, keep_prob),
+                lambda: input)
+
