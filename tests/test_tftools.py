@@ -57,6 +57,24 @@ def test_conv2d():
     tf.reset_default_graph()
 
 
+def test_atrous_conv2d():
+
+    input_shape = [10, 100, 100, 3]
+    filter_shape = 5
+
+    g = tf.Graph()
+    with g.as_default():
+        x = tf.placeholder(tf.float32, input_shape)
+        a1 = layers.atrous_conv2d(x, 5, 8, 'atrous1')
+        a2 = layers.atrous_conv2d(x, 5, 8, 'atrous2', rate=5)
+
+        assert (a1.get_shape() == a2.get_shape())
+        assert (int(a1.get_shape()[0]) == 10)
+        assert (int(a1.get_shape()[1]) == 100)
+        assert (int(a1.get_shape()[2]) == 100)
+        assert (int(a1.get_shape()[3]) == 8)
+
+
 def test_batch_norm_2d():
     batch = 1
     in_dim = 2
