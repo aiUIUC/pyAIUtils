@@ -149,11 +149,13 @@ def dropout(input, training=True, keep_prob=.8, noise_shape=None, seed=None):
 
     if type(training) is type(True):
         if training:
-            return tf.nn.dropout(input, keep_prob, noise_shape=noise_shape, seed=seed)
+            return tf.nn.dropout(input,
+                                 keep_prob,
+                                 noise_shape=noise_shape,
+                                 seed=seed)
         else:
             return input
     else:
         return tf.cond(training,
                 lambda: tf.nn.dropout(input, keep_prob, noise_shape=noise_shape, seed=seed),
                 lambda: input)
-
