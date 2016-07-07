@@ -201,6 +201,26 @@ def test_batchnorm_test_mode():
     assert (np.all(ema_mean_eval1 == ema_mean_eval2)), assert_str
 
 
+def test_dropout():
+    input_shape = [10, 6]
+
+    g = tf.Graph()
+    with g.as_default():
+        training = tf.placeholder(tf.bool, [])
+        inp = tf.placeholder(tf.float32, input_shape)
+
+        x = layers.dropout(inp, True)
+        assert (x.get_shape() == inp.get_shape())
+        x = layers.dropout(inp, False)
+        assert (x.get_shape() == inp.get_shape())
+        x = layers.dropout(inp, training)
+        assert (x.get_shape() == inp.get_shape())
+        with pytest.raises(TypeError):
+            x = layers.dropout(inp, 10)
+        with pytest.raises(TypeError):
+            x = layers.dropout(inp, inp)
+
+
 def test_resize_image_like():
     batch = 1
     width_height = 5
@@ -345,4 +365,3 @@ def test_var_collect_type():
             'scope2',
             graph=g,
             var_type=tf.GraphKeys.TRAINABLE_VARIABLES)
-

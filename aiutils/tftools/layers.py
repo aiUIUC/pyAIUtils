@@ -127,3 +127,35 @@ def batch_norm(input,
     output = bn.output
 
     return output
+
+
+def dropout(input, training=True, keep_prob=.8, noise_shape=None, seed=None):
+    """Adds a dropout layer, which is optionally active for ease of
+    constructing training and test graphs which use the same code.
+
+    Args:
+        input (tensor): Tensor to droupout.
+        training (bool or bool tensor): Determines whether the dropout op is active
+        keep_prob (float): Deterimnes how much of the vector to not dropout
+        noise_shape (one-d int32 tensor): If noise_shape is specified, it must be broadcastable
+            to the shape of input. Dimensions with noise_shape[i] == shape(input)[i]
+            make independent decissions.
+        seed (int): Used to create random seeds. See tf.set_random_seed for behavior.
+
+
+    Returns:
+        (tensor): input tensor, or dropped out tensor depending on training.
+    """
+
+    if type(training) is type(True):
+        if training:
+            return tf.nn.dropout(input,
+                                 keep_prob,
+                                 noise_shape=noise_shape,
+                                 seed=seed)
+        else:
+            return input
+    else:
+        return tf.cond(training,
+                lambda: tf.nn.dropout(input, keep_prob, noise_shape=noise_shape, seed=seed),
+                lambda: input)
