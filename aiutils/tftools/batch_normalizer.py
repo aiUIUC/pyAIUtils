@@ -39,9 +39,16 @@ class BatchNorm():
 
             self.ema = tf.train.ExponentialMovingAverage(decay=self.decay)
 
-            self.output = tf.cond(training,
-                                  lambda: self.get_normalizer(input, True),
-                                  lambda: self.get_normalizer(input, False))
+            if type(training) == type(True):
+                self.mean, self.variance = tf.nn.moments(input, self.axes)
+                ema_apply_op = self.ema.apply([self.mean, self.variance])
+                self.output = self.get_normalizer(input, training)
+            else:
+                self.output = tf.cond(
+                    training, lambda: self.get_normalizer(input, True),
+                    lambda: self.get_normalizer(input, False))
+
+            print self.output
 
     def get_normalizer(self, input, train_flag):
         if train_flag:
@@ -50,7 +57,7 @@ class BatchNorm():
             with tf.control_dependencies([ema_apply_op]):
                 self.output_training = tf.nn.batch_normalization(
                     input, self.mean, self.variance, self.offset, self.scale,
-                    self.epsilon, 'normalizer_train'),
+                    self.epsilon, 'normalizer_train')
             return self.output_training
         else:
             self.output_test = tf.nn.batch_normalization(

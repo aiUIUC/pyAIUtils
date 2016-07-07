@@ -111,12 +111,12 @@ def batch_norm(input,
 
     Args:
         input (tensor): Tensor to be batch normalized
-        training (bool tensor): Boolean tensor of shape []
+        training (bool tensor, bool): Boolean tensor of shape [] or python boolean
         decay (float): Decay used for exponential moving average
         epsilon (float): Small constant added to variance to prevent
             division of the form 0/0
         name (string): variable scope name
-        reuse_vars (bool): Value passed to reuse keyword argument of 
+        reuse_vars (bool): Value passed to reuse keyword argument of
             tf.variable_scope. This only reuses the offset and scale variables, 
             not the moving average shadow variable.
 
