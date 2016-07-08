@@ -48,8 +48,6 @@ class BatchNorm():
                     training, lambda: self.get_normalizer(input, True),
                     lambda: self.get_normalizer(input, False))
 
-            print self.output
-
     def get_normalizer(self, input, train_flag):
         if train_flag:
             self.mean, self.variance = tf.nn.moments(input, self.axes)

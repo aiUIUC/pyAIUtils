@@ -98,9 +98,6 @@ def test_batch_norm_4d():
         y2 = layers.batch_norm(x, True, name='bn2')
         y3 = layers.batch_norm(x, False, name='bn3')
 
-        print y
-        print y2
-
         sess = tf.Session()
         sess.run(tf.initialize_all_variables())
 
@@ -109,8 +106,6 @@ def test_batch_norm_4d():
         y_hat_2 = sess.run(y2, feed_dict={x: x_})
         y_hat_3 = sess.run(y3, feed_dict={x: x_})
 
-        print y_hat
-        print y_hat_2
         assert y_hat.shape == x_.shape
         assert y_hat_2.shape == x_.shape
         assert y_hat_3.shape == x_.shape
