@@ -2,3 +2,4 @@ numpy
 pillow
 pytest
 tensorflow
+future

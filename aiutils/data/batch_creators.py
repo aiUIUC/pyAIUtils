@@ -1,6 +1,8 @@
 """Utility functions for making batch generation easier."""
 import numpy as np
 from multiprocessing import Process, Queue
+from builtins import range
+import itertools
 
 def sequential(batch_size, num_samples, num_epochs=1, offset=0):
     """Generate sequence indices in range [offset, offset+num_samples].
@@ -14,7 +16,7 @@ def sequential(batch_size, num_samples, num_epochs=1, offset=0):
     Output: 
         Yields a generator with sequential sampling
     """
-    for epoch in range(num_epochs):
+    for epoch in range(num_epochs) if num_epochs > 0 else itertools.count():
         indices = np.arange(num_samples) + offset
         for i in range(0, num_samples - batch_size + 1, batch_size):
             yield indices[i:i+batch_size] % batch_size
@@ -32,7 +34,8 @@ def random(batch_size, num_samples, num_epochs, offset=0):
     Output: 
         Yields a generator with random sampling with replacement
     """
-    for epoch in range(num_epochs):
+
+    for epoch in range(num_epochs) if num_epochs > 0 else itertools.count():
         indices = np.random.permutation(num_samples) + offset
         indices = indices.tolist()
         for i in range(0, num_samples - batch_size + 1, batch_size):
