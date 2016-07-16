@@ -4,6 +4,7 @@ from multiprocessing import Process, Queue
 from builtins import range
 import itertools
 
+
 def sequential(batch_size, num_samples, num_epochs=1, offset=0):
     """Generate sequence indices in range [offset, offset+num_samples].
     
@@ -19,10 +20,10 @@ def sequential(batch_size, num_samples, num_epochs=1, offset=0):
     for epoch in range(num_epochs) if num_epochs > 0 else itertools.count():
         indices = np.arange(num_samples) + offset
         for i in range(0, num_samples - batch_size + 1, batch_size):
-            yield indices[i:i+batch_size] % batch_size
+            yield indices[i:i + batch_size] % batch_size
 
 
-def random(batch_size, num_samples, num_epochs, offset=0):
+def random(batch_size, num_samples, num_epochs=1, offset=0):
     """Generate random indices in range [offset, offset+num_samples].
 
     Inputs:
@@ -39,7 +40,7 @@ def random(batch_size, num_samples, num_epochs, offset=0):
         indices = np.random.permutation(num_samples) + offset
         indices = indices.tolist()
         for i in range(0, num_samples - batch_size + 1, batch_size):
-            yield indices[i:i+batch_size]
+            yield indices[i:i + batch_size]
 
 
 def batch_generator(data, index_generator, batch_function=None):
@@ -64,11 +65,10 @@ def batch_generator(data, index_generator, batch_function=None):
         yield output
 
 
-def async_batch_generator(
-        data, 
-        index_generator, 
-        queue_maxsize, 
-        batch_function=None):
+def async_batch_generator(data,
+                          index_generator,
+                          queue_maxsize,
+                          batch_function=None):
     """Create an asynchronous batch generator that runs in a separate process.
 
     Input: 
@@ -85,11 +85,11 @@ def async_batch_generator(
     batcher = batch_generator(data, index_generator, batch_function)
 
     queue = Queue(maxsize=queue_maxsize)
-    
+
     # Start the process to enqueue batches into the queue
     enqueuer = BatchEnqueuer(queue, batcher)
     enqueuer.start()
-    
+
     queue_batcher = queue_generator(queue)
     return queue_batcher
 
@@ -127,6 +127,7 @@ def queue_generator(queue, sentinel=None):
 class NumpyData(object):
     """A simple data class for numpy array data.
     """
+
     def __init__(self, array):
         """
             Input -
@@ -147,4 +148,3 @@ class NumpyData(object):
         if not isinstance(indices, np.ndarray):
             indices = np.array(indices)
         return self.array[indices]
-
