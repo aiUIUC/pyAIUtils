@@ -3,3 +3,4 @@ scipy
 pillow
 pytest
 tensorflow
+future
