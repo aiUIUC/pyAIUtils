@@ -1,11 +1,18 @@
 import numpy as np
 import tensorflow as tf
+from batch_normalizer import BatchNorm
 
 
-def full(input, out_dim, name, gain=np.sqrt(2), func=tf.nn.relu, reuse_vars=False):
+def full(input,
+         out_dim,
+         name,
+         gain=np.sqrt(2),
+         func=tf.nn.relu,
+         reuse_vars=False):
     """ Fully connected layer helper.
 
-    Creates weights and bias parameters with good initial values. Then applies the matmul op and func.
+    Creates weights and bias parameters with good initial values. 
+    Then applies the matmul op and func.
 
     Args:
       input (tensor): Input to the layer.
@@ -27,7 +34,7 @@ def full(input, out_dim, name, gain=np.sqrt(2), func=tf.nn.relu, reuse_vars=Fals
     in_dim = input.get_shape().as_list()[-1]
     stddev = 1.0 * gain / np.sqrt(in_dim)
     with tf.variable_scope(name, reuse=reuse_vars):
-        w_init = tf.random_normal_initializer(stddev)
+        w_init = tf.random_normal_initializer(stddev=stddev)
         b_init = tf.constant_initializer()
         w = tf.get_variable('w', shape=[in_dim, out_dim], initializer=w_init)
         b = tf.get_variable('b', shape=[out_dim], initializer=b_init)
@@ -51,7 +58,8 @@ def conv2d(input,
            reuse_vars=False):
     """ Conv2d layer helper.
 
-    Creates filter and bias parameters with good initial values. Then applies the conv op and func.
+    Creates filter and bias parameters with good initial values. 
+    Then applies the conv op and func.
 
     Args:
       input (tensor): Input to the layer.
@@ -78,7 +86,7 @@ def conv2d(input,
     in_dim = input.get_shape().as_list()[-1]
     stddev = 1.0 * gain / np.sqrt(filter_size * filter_size * in_dim)
     with tf.variable_scope(name, reuse=reuse_vars):
-        w_init = tf.random_normal_initializer(stddev)
+        w_init = tf.random_normal_initializer(stddev=stddev)
         b_init = tf.constant_initializer()
         w = tf.get_variable('w',
                             shape=[filter_size, filter_size, in_dim, out_dim],
@@ -93,43 +101,61 @@ def conv2d(input,
     return output
 
 
-def batch_norm(input, name, reuse_vars=False):
-    """ Batch norm layer helper.
-
-    Gets mean and variance, and creates offset and scale parameters with good initial values.
-    Then applies the batch_normalization op.
+def batch_norm(input,
+               training=tf.constant(True),
+               decay=0.95,
+               epsilon=1e-4,
+               name='bn',
+               reuse_vars=False):
+    """Adds a batch normalization layer.
 
     Args:
-      input (tensor): Input to the layer.
-        Should have shape `[batch, in_dim]` or `[batch, in_height, in_width, in_dim]`.
-        Must be one of the following types: `float32`, `float64`.
-      name (str): Name used by the `tf.variable_scope`.
-      reuse_vars (bool): Determine whether the layer should reuse variables
-        or construct new ones.  Equivalent to setting reuse in variable_scope
+        input (tensor): Tensor to be batch normalized
+        training (bool tensor): Boolean tensor of shape []
+        decay (float): Decay used for exponential moving average
+        epsilon (float): Small constant added to variance to prevent
+            division of the form 0/0
+        name (string): variable scope name
+        reuse_vars (bool): Value passed to reuse keyword argument of 
+            tf.variable_scope. This only reuses the offset and scale variables, 
+            not the moving average shadow variable.
 
     Returns:
-      output (tensor): Batch normalized activations.
-        Will have the same shape as input.
+        output (tensor): Batch normalized output tensor
     """
-    rank = len(input.get_shape().as_list())
-    in_dim = input.get_shape().as_list()[-1]
-
-    if rank == 2:
-        axes = [0]
-    elif rank == 4:
-        axes = [0, 1, 2]
-    else:
-        raise ValueError('Input tensor must have rank 2 or 4.')
-
-    with tf.variable_scope(name, reuse=reuse_vars):
-        mean, variance = tf.nn.moments(input, axes)
-        offset = tf.get_variable('offset',
-                                 shape=[in_dim],
-                                 initializer=tf.constant_initializer(0.0))
-        scale = tf.get_variable('scale',
-                                shape=[in_dim],
-                                initializer=tf.constant_initializer(1.0))
-        output = tf.nn.batch_normalization(input, mean, variance, offset,
-                                           scale, 1e-5)
+    bn = BatchNorm(input, training, decay, epsilon, name, reuse_vars)
+    output = bn.output
 
     return output
+
+
+def dropout(input, training=True, keep_prob=.8, noise_shape=None, seed=None):
+    """Adds a dropout layer, which is optionally active for ease of
+    constructing training and test graphs which use the same code.
+
+    Args:
+        input (tensor): Tensor to droupout.
+        training (bool or bool tensor): Determines whether the dropout op is active
+        keep_prob (float): Deterimnes how much of the vector to not dropout
+        noise_shape (one-d int32 tensor): If noise_shape is specified, it must be broadcastable
+            to the shape of input. Dimensions with noise_shape[i] == shape(input)[i]
+            make independent decissions.
+        seed (int): Used to create random seeds. See tf.set_random_seed for behavior.
+
+
+    Returns:
+        (tensor): input tensor, or dropped out tensor depending on training.
+    """
+
+    if type(training) is type(True):
+        if training:
+            return tf.nn.dropout(input,
+                                 keep_prob,
+                                 noise_shape=noise_shape,
+                                 seed=seed)
+        else:
+            return input
+    else:
+        return tf.cond(training,
+                lambda: tf.nn.dropout(input, keep_prob, noise_shape=noise_shape, seed=seed),
+                lambda: input)
