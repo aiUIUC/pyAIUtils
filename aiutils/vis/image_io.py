@@ -40,3 +40,19 @@ def imshow(np_im):
         im = Image.fromarray(np_im, 'L')
 
     im.show()
+
+
+def rgb2gray(np_im):
+    """
+    Matlab like function for converting numpy ndarray from RGB to grayscale
+
+    Args:
+    np_im (numpy.ndarray): h x w x 3 ndarray storing a color image
+    """
+    err_str = 'imshow expects ndarray of dimension h x w x 3 (RGB)'
+    assert (len(np_im.shape) == 3), err_str
+
+    im = Image.fromarray(np_im, 'RGB')
+    im_array = np.array(im.convert('L'))
+
+    return im_array
