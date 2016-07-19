@@ -50,7 +50,7 @@ def rgb2gray(np_im):
     Args:
     np_im (numpy.ndarray): h x w x 3 ndarray storing a color image
     """
-    err_str = 'imshow expects ndarray of dimension h x w x 3 (RGB)'
+    err_str = 'rgb2gray expects ndarray of dimension h x w x 3 (RGB)'
     assert (len(np_im.shape) == 3), err_str
 
     im = Image.fromarray(np_im, 'RGB')
@@ -102,7 +102,7 @@ def imresize(np_im, method='bilinear', **kwargs):
     elif method == 'nearest':
         method_ = Image.NEAREST
     elif method == 'lanczos':
-        method = Image.LANCZOS
+        method_ = Image.LANCZOS
     else:
         assert_str = "Interpolation method must be one of " + \
                      "{'bilinear', 'nearest', 'lanczos'}"
@@ -121,4 +121,4 @@ def imresize(np_im, method='bilinear', **kwargs):
     h = int(math.ceil(h))
     w = int(math.ceil(w))
     im = Image.fromarray(np_im)
-    return np.array(im.resize((w,h)))
+    return np.array(im.resize((w,h), resample=method_))
