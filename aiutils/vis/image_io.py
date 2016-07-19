@@ -67,11 +67,11 @@ def imwrite(np_im, filename):
     np_im (numpy.ndarray): h x w x 3 ndarray for color images and 
         h x w for grayscale images with pixels stored in uint8 format
     """
-    err_str = 'imshow expects ndarray of dimension h x w x c (RGB) or h x w (L)'
+    err_str = 'imwrite expects ndarray of dimension h x w x c (RGB) or h x w (L)'
     assert (len(np_im.shape) == 3 or len(np_im.shape) == 2), err_str
 
     if len(np_im.shape) == 3:
-        assert (np_im.shape[2] == 3), 'imshow expected 3 channels'
+        assert (np_im.shape[2] == 3), 'imwrite expected 3 channels'
         im = Image.fromarray(np_im, 'RGB')
     else:
         im = Image.fromarray(np_im, 'L')
