@@ -1,7 +1,5 @@
 from PIL import Image
 import numpy as np
-import math
-import pdb
 
 
 def imread(filename):
@@ -13,7 +11,7 @@ def imread(filename):
         h x w for grayscale images
     """
     im = Image.open(filename)
-    
+
     err_str = \
         "imread only supports 'RGB' and 'L' modes, found '{}'".format(im.mode)
     assert (im.mode == 'RGB' or im.mode == 'L'), err_str
@@ -61,6 +59,3 @@ def imwrite(np_im, filename):
         im = Image.fromarray(np_im, 'L')
 
     im.save(filename)
-
-
-

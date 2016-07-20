@@ -1,7 +1,6 @@
 from PIL import Image
 import numpy as np
 import math
-import pdb
 
 
 def rgb2gray(np_im):
@@ -36,7 +35,7 @@ def imresize(np_im, method='bilinear', **kwargs):
     """
     assert_str = "Only 1 keyword argument expected with key either" + \
                  "'output_size' or 'scale'"
-    assert (len(kwargs)==1), assert_str
+    assert (len(kwargs) == 1), assert_str
 
     if method == 'bilinear':
         method_ = Image.BILINEAR
@@ -47,19 +46,19 @@ def imresize(np_im, method='bilinear', **kwargs):
     else:
         assert_str = "Interpolation method must be one of " + \
                      "{'bilinear', 'nearest', 'lanczos'}"
-        assert(False),  assert_str
+        assert (False), assert_str
 
     im_h = np_im.shape[0]
     im_w = np_im.shape[1]
     if 'output_size' in kwargs:
         h, w = kwargs['output_size']
     elif 'scale' in kwargs:
-        h = scale*im_h
-        w = scale*im_w
+        h = scale * im_h
+        w = scale * im_w
     else:
         assert_str = "Variable argument must be one of {'output_size','scale'}"
         assert (False), assert_str
     h = int(math.ceil(h))
     w = int(math.ceil(w))
     im = Image.fromarray(np_im)
-    return np.array(im.resize((w,h), resample=method_))
+    return np.array(im.resize((w, h), resample=method_))
