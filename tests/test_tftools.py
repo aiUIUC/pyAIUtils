@@ -8,6 +8,7 @@ from context import images
 from context import placeholder_management
 from context import batch_normalizer
 from context import var_collect
+from context import train
 
 
 def test_full():
@@ -380,6 +381,28 @@ def test_var_collect_type():
     assert (len(vars_all_2) == 1)
     with pytest.raises(AssertionError):
         vars_trainable_2 = var_collect.collect_scope(
-            'scope2',
-            graph=g,
-            var_type=tf.GraphKeys.TRAINABLE_VARIABLES)
+            'scope2', graph=g, var_type=tf.GraphKeys.TRAINABLE_VARIABLES)
+
+
+def test_multi_optimizer():
+    g = tf.Graph()
+    with g.as_default():
+        a = tf.Variable(1.0)
+        b = tf.Variable(2.0)
+        c = tf.Variable(3.0)
+
+        loss = (a * b - c)**2
+
+        sess = tf.InteractiveSession()
+        optimizer = train.MultiRateOptimizer()
+        optimizer.add_variables([a, b], tf.train.GradientDescentOptimizer(.01))
+        optimizer.add_variables([c], tf.train.GradientDescentOptimizer(.001))
+
+        opt = optimizer.minimize(loss)
+        tf.initialize_all_variables().run()
+        for i in range(100):
+            opt.run()
+
+        assert c.eval() - (a * b).eval() < .01
+        assert c.eval() > 2.5
+        assert (a * b).eval() > 2.5
