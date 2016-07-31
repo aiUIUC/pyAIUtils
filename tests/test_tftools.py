@@ -384,6 +384,31 @@ def test_var_collect_type():
             'scope2', graph=g, var_type=tf.GraphKeys.TRAINABLE_VARIABLES)
 
 
+def simple_test_multi_optimizer():
+    g = tf.Graph()
+    with g.as_default():
+        a = tf.Variable(1.0)
+        b = tf.Variable(2.0)
+
+        loss = tf.abs(a - b)
+
+        sess = tf.InteractiveSession()
+        optimizer = train.MultiRateOptimizer()
+        optimizer.add_variables([a], tf.train.GradientDescentOptimizer(.1))
+        optimizer.add_variables([b], tf.train.GradientDescentOptimizer(.05))
+
+        opt = optimizer.minimize(loss)
+        tf.initialize_all_variables().run()
+
+        for i in range(100):
+            opt.run()
+
+        float_eps = .000001
+        assert a.eval() - b.eval() < float_eps
+
+        assert a.eval() - 1.75 < float_eps
+
+
 def test_multi_optimizer():
     g = tf.Graph()
     with g.as_default():
@@ -400,6 +425,12 @@ def test_multi_optimizer():
 
         opt = optimizer.minimize(loss)
         tf.initialize_all_variables().run()
+        opt.run()
+        float_eps = .000001
+        assert abs(c.eval() - (3 - .002)) < float_eps
+        assert abs(b.eval() - (2 + .02)) < float_eps
+        assert abs(a.eval() - (1 + .04)) < float_eps
+
         for i in range(100):
             opt.run()
 
