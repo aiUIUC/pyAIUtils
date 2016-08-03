@@ -403,7 +403,7 @@ def simple_test_multi_optimizer():
         for i in range(100):
             opt.run()
 
-        float_eps = .000001
+        float_eps = .001
         assert a.eval() - b.eval() < float_eps
 
         assert a.eval() - 1.75 < float_eps
@@ -426,10 +426,10 @@ def test_multi_optimizer():
         opt = optimizer.minimize(loss)
         tf.initialize_all_variables().run()
         opt.run()
-        float_eps = .000001
-        assert abs(c.eval() - (3 - .002)) < float_eps
-        assert abs(b.eval() - (2 + .02)) < float_eps
-        assert abs(a.eval() - (1 + .04)) < float_eps
+        float_eps = .1
+        assert abs(c.eval() - (3 - .002)) < float_eps * .002
+        assert abs(b.eval() - (2 + .02)) < float_eps * .02
+        assert abs(a.eval() - (1 + .04)) < float_eps * .04
 
         for i in range(100):
             opt.run()
