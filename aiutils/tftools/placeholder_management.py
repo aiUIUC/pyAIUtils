@@ -35,8 +35,9 @@ class PlaceholderManager():
     def __init__(self):
         self._placeholders = dict()
         self.issparse = dict()
+        self.islist = dict()
 
-    def add_placeholder(self, name, dtype, shape=None, sparse=False):
+    def add_placeholder(self, name, dtype, shape=None, size=None, sparse=False):
         """Add placeholder.
 
         If the sparse is True then 3 placeholders are automatically created
@@ -49,9 +50,16 @@ class PlaceholderManager():
             name (str): Name of the placeholder.
             dtype (tf.Dtype): Data type for the placeholder.
             shape (list of ints): Shape of the placeholder.
+            size (int) : If not None a list of placeholders is created with
+                the size being the length of the list. plh[name] returns the 
+                list of placeholders in this case.
             sparse (bool): Specifies if the placeholder takes sparse inputs.
         """
 
+        if size:
+            self.add_list_placeholder(name, dtype, size, shape, sparse)
+            return
+        
         self.issparse[name] = sparse
         if not sparse:
             self._placeholders[name] = tf.placeholder(dtype, shape, name)
@@ -68,6 +76,18 @@ class PlaceholderManager():
             self._placeholders[name_shape] = tf.placeholder(tf.int64, [2],
                                                          name_shape)
 
+    def add_list_placeholder(self, name, dtype, size, shape=None, sparse=False):
+        assert_string = 'size needs to be a positive integer'
+        assert(isinstance(size, int) and size>0), assert_string
+        self.islist[name] = size
+        for i in xrange(size):
+            self.add_placeholder(
+                name + '_' + str(i) + '_',
+                dtype,
+                shape=shape,
+                size=None,
+                sparse=sparse)
+
     def __getitem__(self, name):
         """Returns placeholder with the given name.
 
@@ -76,6 +96,13 @@ class PlaceholderManager():
             plh_mgr.add_placeholder('var_name', tf.int64, sparse=True)
             placeholder = plh_mgr['var_name']
         """
+        if name in self.islist:
+            list_size = self.islist[name]
+            placeholder_list = [None]*list_size
+            for i in xrange(list_size):
+                placeholder_list[i] = self[name + '_' + str(i) + '_']
+            return placeholder_list
+
         sparse = self.issparse[name]
         if not sparse:
             placeholder = self._placeholders[name]
@@ -128,36 +155,49 @@ class PlaceholderManager():
         """
         feed_dict = dict()
         for name, input_value in inputs.items():
-            try:
-                placeholder_sparsity = self.issparse[name]
-                input_sparsity = sps.issparse(input_value)
-                assert_str = 'Sparsity of placeholder and input do not match'
-                assert (placeholder_sparsity == input_sparsity), assert_str
-                if not input_sparsity:
-                    placeholder = self._placeholders[name]
-                    feed_dict[placeholder] = input_value
-
-                else:
-                    I, J, V = sps.find(input_value)
-
-                    placeholder_indices = self._placeholders[name + '_indices']
-                    placeholder_values = self._placeholders[name + '_values']
-                    placeholder_shape = self._placeholders[name + '_shape']
-
-                    feed_dict[placeholder_indices] = \
-                        np.column_stack([I, J]).astype(np.int64)
-                    feed_dict[placeholder_shape] = \
-                        np.array(input_value.shape).astype(np.int64)
-                    if placeholder_values.dtype == tf.int64:
-                        feed_dict[placeholder_values] = V.astype(np.int64)
-                    else:
-                        feed_dict[placeholder_values] = V
-
-            except KeyError:
-                print "No placeholder with name '{}'".format(name)
-                raise
+            if name in self.islist:
+                for i in xrange(self.islist[name]):
+                    self.get_feed_dict_inner(
+                        feed_dict,
+                        name + '_' + str(i) + '_',
+                        input_value[i])
+            else:
+                self.get_feed_dict_inner(
+                    feed_dict,
+                    name,
+                    input_value)
 
         return feed_dict
+
+    def get_feed_dict_inner(self, feed_dict, name, input_value):
+        try:
+            placeholder_sparsity = self.issparse[name]
+            input_sparsity = sps.issparse(input_value)
+            assert_str = 'Sparsity of placeholder and input do not match'
+            assert (placeholder_sparsity == input_sparsity), assert_str
+            if not input_sparsity:
+                placeholder = self._placeholders[name]
+                feed_dict[placeholder] = input_value
+
+            else:
+                I, J, V = sps.find(input_value)
+                
+                placeholder_indices = self._placeholders[name + '_indices']
+                placeholder_values = self._placeholders[name + '_values']
+                placeholder_shape = self._placeholders[name + '_shape']
+
+                feed_dict[placeholder_indices] = \
+                    np.column_stack([I, J]).astype(np.int64)
+                feed_dict[placeholder_shape] = \
+                    np.array(input_value.shape).astype(np.int64)
+                if placeholder_values.dtype == tf.int64:
+                    feed_dict[placeholder_values] = V.astype(np.int64)
+                else:
+                    feed_dict[placeholder_values] = V
+
+        except KeyError:
+            print "No placeholder with name '{}'".format(name)
+            raise
 
     def feed_dict_debug_string(self, feed_dict):
         """Returns feed dictionary as a neat string.
@@ -194,5 +234,3 @@ class PlaceholderManager():
     def __str__(self):
         """Allows PlaceholderManager object to be used with print or str()."""
         return self.placeholder_debug_string()
-
-

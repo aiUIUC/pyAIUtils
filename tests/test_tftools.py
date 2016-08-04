@@ -275,6 +275,11 @@ def test_placeholder_management():
     plh_mgr.add_placeholder('word_embed', tf.float64, [10, 10])
     plh_mgr.add_placeholder('sp_ids', tf.int64, sparse=True)
     plh_mgr.add_placeholder('weights', tf.float64, sparse=True)
+    plh_mgr.add_list_placeholder(
+        'list_of_ints',
+        tf.int32,
+        shape=[2],
+        size=3)
 
     # Get a dictionary of placeholders
     plhs = plh_mgr.get_placeholders()
@@ -282,7 +287,9 @@ def test_placeholder_management():
     # Define computation graph
     y = tf.nn.embedding_lookup_sparse(plhs['word_embed'], plhs['sp_ids'],
                                       plhs['weights'])
-
+    list_of_ints = plh_mgr['list_of_ints']
+    z = list_of_ints[0] + list_of_ints[1] + plhs['list_of_ints_2_']
+    
     # Create data to be fed into the graph
     I = np.array([0, 0, 1, 1])
     J = np.array([3, 8, 2, 5])
@@ -293,19 +300,50 @@ def test_placeholder_management():
     word_embed = np.eye(10, 10, dtype=np.float64)
 
     # Create input dict
-    inputs = {'word_embed': word_embed, 'sp_ids': sp_ids, 'weights': weights, }
+    inputs = {
+        'word_embed': word_embed, 
+        'sp_ids': sp_ids, 
+        'weights': weights, 
+        'list_of_ints': [
+            [1,2],
+            [2,3],
+            [3,4]]
+    }
 
-    # Create feed dictionary from inputs
-    feed_dict = plh_mgr.get_feed_dict(inputs)
+    try:
+        feed_dict = plh_mgr.get_feed_dict(inputs)
+    except:
+        print 'get_feed_dict method of PlaceholderManager class failed'
+        raise
 
     y_gt = np.array([[0, 0, 0, 0.9, 0, 0, 0, 0, 0.1, 0], \
                      [0, 0, 0.4, 0, 0, 0.6, 0, 0, 0, 0]])
 
-    assert_str = 'test_placeholder_management failed'
+    assert(np.all(z.eval(feed_dict)==[6,9]))
+    assert_str = 'evaluating feed_dict failed'
     assert (np.array_equal(y.eval(feed_dict), y_gt)), assert_str
+    
 
     assert_str = '__getitem__ method of PlaceholderManager class failed'
     assert ('word_embed' in plh_mgr['word_embed'].name), assert_str
+
+    try:
+        plh_list_of_ints = plh_mgr['list_of_ints']
+        for i in xrange(len(plh_list_of_ints)):
+            name = 'list_of_ints_' + str(i) + '_'
+            assert(name in plh_list_of_ints[i].name)
+    except:
+        print '__getitem__ method of PlaceholderManager class ' + \
+              'failed for list of placeholders'
+        raise
+
+    try:
+        plh_debug_str = plh_mgr.placeholder_debug_string()
+    except:
+        error_str = 'placeholder_debug_string() method of ' + \
+                    'PlaceholderManager class errored'
+        print error_str
+        raise
 
     tf.reset_default_graph()
 
