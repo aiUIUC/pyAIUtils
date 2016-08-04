@@ -275,11 +275,7 @@ def test_placeholder_management():
     plh_mgr.add_placeholder('word_embed', tf.float64, [10, 10])
     plh_mgr.add_placeholder('sp_ids', tf.int64, sparse=True)
     plh_mgr.add_placeholder('weights', tf.float64, sparse=True)
-    plh_mgr.add_list_placeholder(
-        'list_of_ints',
-        tf.int32,
-        shape=[2],
-        size=3)
+    plh_mgr.add_list_placeholder('list_of_ints', tf.int32, shape=[2], size=3)
 
     # Get a dictionary of placeholders
     plhs = plh_mgr.get_placeholders()
@@ -289,7 +285,7 @@ def test_placeholder_management():
                                       plhs['weights'])
     list_of_ints = plh_mgr['list_of_ints']
     z = list_of_ints[0] + list_of_ints[1] + plhs['list_of_ints_2_']
-    
+
     # Create data to be fed into the graph
     I = np.array([0, 0, 1, 1])
     J = np.array([3, 8, 2, 5])
@@ -301,13 +297,12 @@ def test_placeholder_management():
 
     # Create input dict
     inputs = {
-        'word_embed': word_embed, 
-        'sp_ids': sp_ids, 
-        'weights': weights, 
+        'word_embed': word_embed,
+        'sp_ids': sp_ids,
+        'weights': weights,
         'list_of_ints': [
-            [1,2],
-            [2,3],
-            [3,4]]
+            [1, 2], [2, 3], [3, 4]
+        ]
     }
 
     try:
@@ -319,10 +314,9 @@ def test_placeholder_management():
     y_gt = np.array([[0, 0, 0, 0.9, 0, 0, 0, 0, 0.1, 0], \
                      [0, 0, 0.4, 0, 0, 0.6, 0, 0, 0, 0]])
 
-    assert(np.all(z.eval(feed_dict)==[6,9]))
+    assert (np.all(z.eval(feed_dict) == [6, 9]))
     assert_str = 'evaluating feed_dict failed'
     assert (np.array_equal(y.eval(feed_dict), y_gt)), assert_str
-    
 
     assert_str = '__getitem__ method of PlaceholderManager class failed'
     assert ('word_embed' in plh_mgr['word_embed'].name), assert_str
@@ -331,7 +325,7 @@ def test_placeholder_management():
         plh_list_of_ints = plh_mgr['list_of_ints']
         for i in xrange(len(plh_list_of_ints)):
             name = 'list_of_ints_' + str(i) + '_'
-            assert(name in plh_list_of_ints[i].name)
+            assert (name in plh_list_of_ints[i].name)
     except:
         print '__getitem__ method of PlaceholderManager class ' + \
               'failed for list of placeholders'
@@ -392,32 +386,26 @@ def test_var_collect_type():
     with g.as_default():
         with tf.name_scope('scope1') as scope1:
             a = tf.Variable(
-                tf.constant(1.0, shape=[1]),
-                name='a', trainable=True)
+                tf.constant(
+                    1.0, shape=[1]), name='a', trainable=True)
             b = tf.Variable(
-                tf.constant(1.0, shape=[1]),
-                name='b',
-                trainable=False)
+                tf.constant(
+                    1.0, shape=[1]), name='b', trainable=False)
             c = tf.Variable(
-                tf.constant(1.0, shape=[1]),
-                name='c',
-                trainable=False)
+                tf.constant(
+                    1.0, shape=[1]), name='c', trainable=False)
         with tf.name_scope('scope2') as scope2:
             a = tf.Variable(
-                tf.constant(1.0, shape=[1]),
-                name='a',
-                trainable=False)
+                tf.constant(
+                    1.0, shape=[1]), name='a', trainable=False)
 
     vars_all_1 = var_collect.collect_scope('scope1', graph=g)
     assert (len(vars_all_1) == 3)
     vars_trainable_1 = var_collect.collect_scope(
-        'scope1', graph=g,
-        var_type=tf.GraphKeys.TRAINABLE_VARIABLES)
+        'scope1', graph=g, var_type=tf.GraphKeys.TRAINABLE_VARIABLES)
     assert (len(vars_trainable_1) == 1)
     vars_all_2 = var_collect.collect_scope('scope2', graph=g)
     assert (len(vars_all_2) == 1)
     with pytest.raises(AssertionError):
         vars_trainable_2 = var_collect.collect_scope(
-            'scope2',
-            graph=g,
-            var_type=tf.GraphKeys.TRAINABLE_VARIABLES)
+            'scope2', graph=g, var_type=tf.GraphKeys.TRAINABLE_VARIABLES)

@@ -37,7 +37,8 @@ class PlaceholderManager():
         self.issparse = dict()
         self.islist = dict()
 
-    def add_placeholder(self, name, dtype, shape=None, size=None, sparse=False):
+    def add_placeholder(self, name, dtype, shape=None, size=None,
+                        sparse=False):
         """Add placeholder.
 
         If the sparse is True then 3 placeholders are automatically created
@@ -59,7 +60,7 @@ class PlaceholderManager():
         if size:
             self.add_list_placeholder(name, dtype, size, shape, sparse)
             return
-        
+
         self.issparse[name] = sparse
         if not sparse:
             self._placeholders[name] = tf.placeholder(dtype, shape, name)
@@ -69,16 +70,17 @@ class PlaceholderManager():
             name_values = name + '_values'
             name_shape = name + '_shape'
 
-            self._placeholders[name_indices] = tf.placeholder(tf.int64, [None, 2],
-                                                           name_indices)
+            self._placeholders[name_indices] = tf.placeholder(
+                tf.int64, [None, 2], name_indices)
             self._placeholders[name_values] = tf.placeholder(dtype, [None],
-                                                          name_values)
+                                                             name_values)
             self._placeholders[name_shape] = tf.placeholder(tf.int64, [2],
-                                                         name_shape)
+                                                            name_shape)
 
-    def add_list_placeholder(self, name, dtype, size, shape=None, sparse=False):
+    def add_list_placeholder(self, name, dtype, size, shape=None,
+                             sparse=False):
         assert_string = 'size needs to be a positive integer'
-        assert(isinstance(size, int) and size>0), assert_string
+        assert (isinstance(size, int) and size > 0), assert_string
         self.islist[name] = size
         for i in xrange(size):
             self.add_placeholder(
@@ -98,7 +100,7 @@ class PlaceholderManager():
         """
         if name in self.islist:
             list_size = self.islist[name]
-            placeholder_list = [None]*list_size
+            placeholder_list = [None] * list_size
             for i in xrange(list_size):
                 placeholder_list[i] = self[name + '_' + str(i) + '_']
             return placeholder_list
@@ -158,14 +160,9 @@ class PlaceholderManager():
             if name in self.islist:
                 for i in xrange(self.islist[name]):
                     self.get_feed_dict_inner(
-                        feed_dict,
-                        name + '_' + str(i) + '_',
-                        input_value[i])
+                        feed_dict, name + '_' + str(i) + '_', input_value[i])
             else:
-                self.get_feed_dict_inner(
-                    feed_dict,
-                    name,
-                    input_value)
+                self.get_feed_dict_inner(feed_dict, name, input_value)
 
         return feed_dict
 
@@ -181,7 +178,7 @@ class PlaceholderManager():
 
             else:
                 I, J, V = sps.find(input_value)
-                
+
                 placeholder_indices = self._placeholders[name + '_indices']
                 placeholder_values = self._placeholders[name + '_values']
                 placeholder_shape = self._placeholders[name + '_shape']
