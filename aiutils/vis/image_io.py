@@ -52,6 +52,8 @@ def imwrite(np_im, filename):
     err_str = 'imwrite expects ndarray of dimension h x w x c (RGB) or h x w (L)'
     assert (len(np_im.shape) == 3 or len(np_im.shape) == 2), err_str
 
+    assert(np_im.dtype == np.dtype('uint8')), 'expects np_im to be a uint8, 0-255 valued'
+
     if len(np_im.shape) == 3:
         assert (np_im.shape[2] == 3), 'imwrite expected 3 channels'
         im = Image.fromarray(np_im, 'RGB')
