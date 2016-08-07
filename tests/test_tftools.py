@@ -285,11 +285,11 @@ def test_placeholder_management():
 
     # Create data to be fed into the graph
     I = np.array([0, 0, 1, 1])
-    J = np.array([3, 8, 2, 5])
+    J = np.array([0, 1, 2, 3])
     V = np.array([3, 8, 2, 5])
     W = np.array([0.9, 0.1, 0.4, 0.6])
-    sp_ids = sps.coo_matrix((V, (I, J)), shape=(2, 10), dtype=np.int64)
-    weights = sps.coo_matrix((W, (I, J)), shape=(2, 10), dtype=np.float64)
+    sp_ids = sps.coo_matrix((V, (I, J)), shape=(2, 4), dtype=np.int64)
+    weights = sps.coo_matrix((W, (I, J)), shape=(2, 4), dtype=np.float64)
     word_embed = np.eye(10, 10, dtype=np.float64)
 
     # Create input dict
