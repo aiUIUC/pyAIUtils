@@ -2,7 +2,7 @@ import tensorflow as tf
 
 
 def print_var_list(var_list, name='Variables'):
-    print name + ': \n' + '[' + ', '.join([var.name for var in var_list]) + ']'
+    print name + ': \n' + '[' + ',\n '.join([var.name for var in var_list]) + ']'
 
 
 def collect_name(var_name, graph=None, var_type=tf.GraphKeys.VARIABLES):
