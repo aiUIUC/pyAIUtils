@@ -72,7 +72,11 @@ class MultiRateOptimizer():
 
         return dupes
 
-    def add_variables(self, variables, optimizer=None, learning_rate=None, other_params={}):
+    def add_variables(self,
+                      variables,
+                      optimizer=None,
+                      learning_rate=None,
+                      other_params={}):
         """ Adds Variables and optimizers with different parameters.
 
         variables (list of tf.variables): the variables to optimize wrt.
@@ -87,17 +91,21 @@ class MultiRateOptimizer():
         print 'test'
         chck_vars = self.check_variables(variables)
         if len(chck_vars) != 0:
-            raise ValueError('Expected all new variables, got overlap', *[v.name for v in chck_vars])
-        assert(len(self.check_variables(variables)) == 0)
+            raise ValueError('Expected all new variables, got overlap', *
+                             [v.name for v in chck_vars])
+        assert (len(self.check_variables(variables)) == 0)
         self.variables.append(variables)
 
         if (optimizer is not None):
             self.optimizers.append(optimizer)
         else:
             if self.default_optimizer is None:
-                raise ValueError('default_optimizer is None', 'When optimizer is not passed to add_variables, expect default_optimizer to be not None')
+                raise ValueError(
+                    'default_optimizer is None',
+                    'When optimizer is not passed to add_variables, expect default_optimizer to be not None')
 
-            self.optimizers.append(self.default_optimizer(learning_rate, **other_params))
+            self.optimizers.append(
+                self.default_optimizer(learning_rate, **other_params))
 
         return self
 
