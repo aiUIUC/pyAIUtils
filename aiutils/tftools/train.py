@@ -5,10 +5,29 @@ The MultiRateOptimizer class provides a slightly simpler version of the tf.train
  - apply_gradients(grads_and_vars, global_step)
  - minimize(loss, global_step)
 
-To add variables and corresponding optimizers use
- - add_variables(variables, optimizer)
+To initialize:
+ - MultiRateOptimizer([default_optimizer=tf.train.GradientDescentOptimizer])
 
-Usage:
+To add variables and corresponding optimizers use add_variables as
+ - add_variables(variables, optimizer)
+ - add_variables(variables, learning_rate, [other_params])
+
+Usage 1:
+    a = tf.Variable(1)
+    b = tf.Variable(2)
+    c = tf.Variable(3)
+
+    loss = f(a,b,c)
+
+    optimizer = MultiRateOptimizer(tf.train.GradientDescentOptimizer)
+    optimizer.add_variables([a,b], learning_rate=.1)
+    optimizer.add_variables([c], learning_rate=.01)
+
+    min_opt = optimizer.minimize(loss)
+
+    min_opt.eval()
+
+Usage 2:
     a = tf.Variable(1)
     b = tf.Variable(2)
     c = tf.Variable(3)
@@ -31,20 +50,56 @@ import itertools
 class MultiRateOptimizer():
     """ Class for managing a multi-rate optimization problem """
 
-    def __init__(self):
+    def __init__(self, default_optimizer=None):
         self.optimizers = []
         self.variables = []
+        self.default_optimizer = default_optimizer
 
-    def add_variables(self, variables, optimizer):
+    def check_variables(self, variables):
+        """ Checks variables against the already added variables and returns a list
+        of reused variables.
+
+        variables (list of tf.variables): The variables to check
+
+        return (list of tf.variables): The variables which are already known to this optimizer.
+        """
+        in_variables = set(itertools.chain(*self.variables))
+
+        dupes = []
+        for v in variables:
+            if v in in_variables:
+                dupes.append(v)
+
+        return dupes
+
+    def add_variables(self, variables, optimizer=None, learning_rate=None, other_params={}):
         """ Adds Variables and optimizers with different parameters.
 
         variables (list of tf.variables): the variables to optimize wrt.
-        optimizer (tf.train.Optimizer): The corresponding optimizer.
 
+        Either:
+        optimizer (tf.train.Optimizer): The corresponding optimizer.
+        Or:
+        learning_rate (float): A learning rate to pass to the default_optimizer
+        other_params (dict): A dictionary of param_name, value to pass the the default optimizer
         """
 
+        print 'test'
+        chck_vars = self.check_variables(variables)
+        if len(chck_vars) != 0:
+            raise ValueError('Expected all new variables, got overlap', *[v.name for v in chck_vars])
+        assert(len(self.check_variables(variables)) == 0)
         self.variables.append(variables)
-        self.optimizers.append(optimizer)
+
+        if (optimizer is not None):
+            self.optimizers.append(optimizer)
+        else:
+            if self.default_optimizer is None:
+                raise ValueError('default_optimizer is None', 'When optimizer is not passed to add_variables, expect default_optimizer to be not None')
+
+            self.optimizers.append(self.default_optimizer(learning_rate, **other_params))
+
+        return self
 
     def compute_gradients(self, loss):
         """ Computes gradients of loss for the variables added to this object.

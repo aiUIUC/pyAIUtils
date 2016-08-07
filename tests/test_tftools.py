@@ -8,7 +8,6 @@ from context import images
 from context import placeholder_management
 from context import batch_normalizer
 from context import var_collect
-from context import train
 
 
 def test_full():
@@ -294,7 +293,9 @@ def test_placeholder_management():
     word_embed = np.eye(10, 10, dtype=np.float64)
 
     # Create input dict
-    inputs = {'word_embed': word_embed, 'sp_ids': sp_ids, 'weights': weights, }
+    inputs = {'word_embed': word_embed,
+              'sp_ids': sp_ids,
+              'weights': weights, }
 
     # Create feed dictionary from inputs
     feed_dict = plh_mgr.get_feed_dict(inputs)
@@ -355,85 +356,26 @@ def test_var_collect_type():
     with g.as_default():
         with tf.name_scope('scope1') as scope1:
             a = tf.Variable(
-                tf.constant(1.0, shape=[1]),
-                name='a', trainable=True)
+                tf.constant(
+                    1.0, shape=[1]), name='a', trainable=True)
             b = tf.Variable(
-                tf.constant(1.0, shape=[1]),
-                name='b',
-                trainable=False)
+                tf.constant(
+                    1.0, shape=[1]), name='b', trainable=False)
             c = tf.Variable(
-                tf.constant(1.0, shape=[1]),
-                name='c',
-                trainable=False)
+                tf.constant(
+                    1.0, shape=[1]), name='c', trainable=False)
         with tf.name_scope('scope2') as scope2:
             a = tf.Variable(
-                tf.constant(1.0, shape=[1]),
-                name='a',
-                trainable=False)
+                tf.constant(
+                    1.0, shape=[1]), name='a', trainable=False)
 
     vars_all_1 = var_collect.collect_scope('scope1', graph=g)
     assert (len(vars_all_1) == 3)
     vars_trainable_1 = var_collect.collect_scope(
-        'scope1', graph=g,
-        var_type=tf.GraphKeys.TRAINABLE_VARIABLES)
+        'scope1', graph=g, var_type=tf.GraphKeys.TRAINABLE_VARIABLES)
     assert (len(vars_trainable_1) == 1)
     vars_all_2 = var_collect.collect_scope('scope2', graph=g)
     assert (len(vars_all_2) == 1)
     with pytest.raises(AssertionError):
         vars_trainable_2 = var_collect.collect_scope(
             'scope2', graph=g, var_type=tf.GraphKeys.TRAINABLE_VARIABLES)
-
-
-def simple_test_multi_optimizer():
-    g = tf.Graph()
-    with g.as_default():
-        a = tf.Variable(1.0)
-        b = tf.Variable(2.0)
-
-        loss = tf.abs(a - b)
-
-        sess = tf.InteractiveSession()
-        optimizer = train.MultiRateOptimizer()
-        optimizer.add_variables([a], tf.train.GradientDescentOptimizer(.1))
-        optimizer.add_variables([b], tf.train.GradientDescentOptimizer(.05))
-
-        opt = optimizer.minimize(loss)
-        tf.initialize_all_variables().run()
-
-        for i in range(100):
-            opt.run()
-
-        float_eps = .001
-        assert a.eval() - b.eval() < float_eps
-
-        assert a.eval() - 1.75 < float_eps
-
-
-def test_multi_optimizer():
-    g = tf.Graph()
-    with g.as_default():
-        a = tf.Variable(1.0)
-        b = tf.Variable(2.0)
-        c = tf.Variable(3.0)
-
-        loss = (a * b - c)**2
-
-        sess = tf.InteractiveSession()
-        optimizer = train.MultiRateOptimizer()
-        optimizer.add_variables([a, b], tf.train.GradientDescentOptimizer(.01))
-        optimizer.add_variables([c], tf.train.GradientDescentOptimizer(.001))
-
-        opt = optimizer.minimize(loss)
-        tf.initialize_all_variables().run()
-        opt.run()
-        float_eps = .1
-        assert abs(c.eval() - (3 - .002)) < float_eps * .002
-        assert abs(b.eval() - (2 + .02)) < float_eps * .02
-        assert abs(a.eval() - (1 + .04)) < float_eps * .04
-
-        for i in range(100):
-            opt.run()
-
-        assert c.eval() - (a * b).eval() < .01
-        assert c.eval() > 2.5
-        assert (a * b).eval() > 2.5
