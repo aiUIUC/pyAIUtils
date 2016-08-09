@@ -8,7 +8,7 @@ import os
 import numpy as np
 
 import tensorflow as tf
-
+import pdb
 
 if __name__=='__main__':
     im_h, im_w = (224, 224)
@@ -45,5 +45,5 @@ if __name__=='__main__':
     resnet_model.restore_pretrained_model(sess, ckpt_filename)
     logits = resnet_model.logits.eval(feed_dict,sess)
     model.class_prediction(logits[0,:])
-
+    pdb.set_trace()
     sess.close()

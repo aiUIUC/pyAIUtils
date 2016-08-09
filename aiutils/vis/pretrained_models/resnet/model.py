@@ -6,7 +6,7 @@
 # - Average Pooling Layer (2048 dim) feature extraction
 # - 1000 way object classification 
 
-import inference
+import inference_atrous as inference
 from synset import *
 from aiutils.tftools import var_collect
 import numpy as np
