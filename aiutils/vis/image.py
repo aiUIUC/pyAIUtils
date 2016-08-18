@@ -53,8 +53,8 @@ def imresize(np_im, method='bilinear', **kwargs):
     if 'output_size' in kwargs:
         h, w = kwargs['output_size']
     elif 'scale' in kwargs:
-        h = scale * im_h
-        w = scale * im_w
+        h = kwargs['scale'] * im_h
+        w = kwargs['scale'] * im_w
     else:
         assert_str = "Variable argument must be one of {'output_size','scale'}"
         assert (False), assert_str
