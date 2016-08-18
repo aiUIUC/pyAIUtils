@@ -32,7 +32,7 @@ if __name__=='__main__':
 
         resnet_model = model.ResnetInference(
             plh['images'],
-            num_blocks = [3, 4, 3, 2]
+            num_blocks = [3, 4, 6, 3]
         )
     
     # Create feed dict
