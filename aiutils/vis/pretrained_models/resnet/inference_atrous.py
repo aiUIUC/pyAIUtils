@@ -1,5 +1,8 @@
-# import skimage.io  # bug. need to import this before tensorflow
-# import skimage.transform  # bug. need to import this before tensorflow
+# Resnet graph construction code adopted from:
+# https://github.com/ry/tensorflow-resnet
+# Modified to replace conv layers with atrous convs and
+# make the network fully convolutional
+
 import tensorflow as tf
 from tensorflow.python.ops import control_flow_ops
 from tensorflow.python.training import moving_averages
@@ -49,6 +52,7 @@ def inference(x, is_training,
         c['conv_filters_out'] = 64
         c['ksize'] = 7
         c['stride'] = 2
+        c['rate'] = 2
         x = conv(x, c)
         x = bn(x, c)
         x = activation(x)
@@ -59,109 +63,37 @@ def inference(x, is_training,
         c['num_blocks'] = num_blocks[0]
         c['stack_stride'] = 1
         c['block_filters_internal'] = 64
+        c['rate'] = 2
         x = stack(x, c)
         print 'scale2 {}'.format(x.get_shape())
 
     with tf.variable_scope('scale3'):
         c['num_blocks'] = num_blocks[1]
-        c['stack_stride'] = 2
         c['block_filters_internal'] = 128
-        # assert c['stack_stride'] == 2
+        c['rate'] = 4
+        assert c['stack_stride'] == 2
         x = stack(x, c)
         print 'scale3 {}'.format(x.get_shape())
 
     with tf.variable_scope('scale4'):
         c['num_blocks'] = num_blocks[2]
-        c['stack_stride'] = 2
         c['block_filters_internal'] = 256
+        c['rate'] = 8
         x = stack(x, c)
         print 'scale4 {}'.format(x.get_shape())
 
     with tf.variable_scope('scale5'):
         c['num_blocks'] = num_blocks[3]
-        c['stack_stride'] = 2
         c['block_filters_internal'] = 512
+        c['rate'] = 16
         x = stack(x, c)
         print 'scale5 {}'.format(x.get_shape())
 
-    # post-net
-    x = tf.reduce_mean(x, reduction_indices=[1, 2], name="avg_pool")
-    
     if num_classes != None:
         with tf.variable_scope('fc'):
-            x = fc(x, c)
+            x = fully_convolutional(x, c)
 
     return x
-
-
-# This is what they use for CIFAR-10 and 100.
-# See Section 4.2 in http://arxiv.org/abs/1512.03385
-def inference_small(x,
-                    is_training,
-                    num_blocks=3, # 6n+2 total weight layers will be used.
-                    use_bias=False, # defaults to using batch norm
-                    num_classes=10):
-    c = Config()
-    c['is_training'] = tf.convert_to_tensor(is_training,
-                                            dtype='bool',
-                                            name='is_training')
-    c['use_bias'] = use_bias
-    c['fc_units_out'] = num_classes
-    c['num_blocks'] = num_blocks
-    c['num_classes'] = num_classes
-    inference_small_config(x, c)
-
-def inference_small_config(x, c):
-    c['bottleneck'] = False
-    c['ksize'] = 3
-    c['stride'] = 1
-    with tf.variable_scope('scale1'):
-        c['conv_filters_out'] = 16
-        c['block_filters_internal'] = 16
-        c['stack_stride'] = 1
-        x = conv(x, c)
-        x = bn(x, c)
-        x = activation(x)
-        x = stack(x, c)
-
-    with tf.variable_scope('scale2'):
-        c['block_filters_internal'] = 32
-        c['stack_stride'] = 2
-        x = stack(x, c)
-
-    with tf.variable_scope('scale3'):
-        c['block_filters_internal'] = 64
-        c['stack_stride'] = 2
-        x = stack(x, c)
-
-    # post-net
-    x = tf.reduce_mean(x, reduction_indices=[1, 2], name="avg_pool")
-
-    if c['num_classes'] != None:
-        with tf.variable_scope('fc'):
-            x = fc(x, c)
-
-    return x
-
-
-def _imagenet_preprocess(rgb):
-    """Changes RGB [0,1] valued image to BGR [0,255] with mean subtracted."""
-    red, green, blue = tf.split(3, 3, rgb * 255.0)
-    bgr = tf.concat(3, [blue, green, red])
-    bgr -= IMAGENET_MEAN_BGR
-    return bgr
-
-
-def loss(logits, labels):
-    cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(logits, labels)
-    cross_entropy_mean = tf.reduce_mean(cross_entropy)
- 
-    regularization_losses = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
-
-    loss_ = tf.add_n([cross_entropy_mean] + regularization_losses)
-    tf.scalar_summary('loss', loss_)
-
-    return loss_
 
 
 def stack(x, c):
@@ -274,7 +206,6 @@ def bn(x, c):
         lambda: (moving_mean, moving_variance))
 
     x = tf.nn.batch_normalization(x, mean, variance, beta, gamma, BN_EPSILON)
-    #x.set_shape(inputs.get_shape()) ??
 
     return x
 
@@ -293,6 +224,27 @@ def fc(x, c):
                            shape=[num_units_out],
                            initializer=tf.zeros_initializer)
     x = tf.nn.xw_plus_b(x, weights, biases)
+    return x
+
+
+def fully_convolutional(x, c):
+    num_units_in = x.get_shape()[-1]
+    num_units_out = c['fc_units_out']
+    weights_initializer = tf.truncated_normal_initializer(
+        stddev=FC_WEIGHT_STDDEV)
+
+    weights = _get_variable('weights',
+                            shape=[num_units_in, num_units_out],
+                            initializer=weights_initializer,
+                            weight_decay=FC_WEIGHT_STDDEV)
+
+    weights = tf.reshape(weights, [1, 1, num_units_in.value, num_units_out])
+    biases = _get_variable('biases',
+                           shape=[num_units_out],
+                           initializer=tf.zeros_initializer)
+    x = tf.nn.conv2d(x, weights, [1, 1, 1, 1], padding='SAME') 
+    x = x + biases
+
     return x
 
 
@@ -322,7 +274,7 @@ def conv(x, c):
     ksize = c['ksize']
     stride = c['stride']
     filters_out = c['conv_filters_out']
-
+    rate = c['rate']
     filters_in = x.get_shape()[-1]
     shape = [ksize, ksize, filters_in, filters_out]
     initializer = tf.truncated_normal_initializer(stddev=CONV_WEIGHT_STDDEV)
@@ -332,19 +284,16 @@ def conv(x, c):
                             initializer=initializer,
                             weight_decay=CONV_WEIGHT_DECAY)
 
-    x = tf.nn.atrous_conv2d(x, weights, rate=2, padding='SAME')
-    return _max_pool(x, ksize=1, stride=stride)
+    x = tf.nn.atrous_conv2d(x, weights, rate=rate, padding='SAME')
+    return x 
 
-
-    # x = tf.nn.conv2d(x, weights, [1, stride, stride, 1], padding='SAME')
-    # print x.name
-    # return x
 
 def _max_pool(x, ksize=3, stride=2):
     return tf.nn.max_pool(x,
                           ksize=[1, ksize, ksize, 1],
                           strides=[1, stride, stride, 1],
                           padding='SAME')
+
 
 def _avg_pool(x, ksize=3, stride=2):
     return tf.nn.avg_pool(x,

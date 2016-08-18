@@ -1,3 +1,7 @@
+# Code from:
+# https://github.com/ry/tensorflow-resnet
+# Classes used for pretrained resnet models provided at the link above
+
 synset = [
     "n01440764 tench, Tinca tinca",
     "n01443537 goldfish, Carassius auratus",

@@ -1,5 +1,6 @@
-# import skimage.io  # bug. need to import this before tensorflow
-# import skimage.transform  # bug. need to import this before tensorflow
+# Resnet graph construction code adopted from:
+# https://github.com/ry/tensorflow-resnet
+
 import tensorflow as tf
 from tensorflow.python.ops import control_flow_ops
 from tensorflow.python.training import moving_averages
