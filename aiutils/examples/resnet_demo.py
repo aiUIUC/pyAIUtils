@@ -31,7 +31,10 @@ if __name__=='__main__':
             tf.float32,
             shape=[None,im_h,im_w,3])
 
-        resnet_model = model.ResnetInference(plh['images'])
+        resnet_model = model.ResnetInference(
+            plh['images'],
+            num_blocks = [3, 4, 6, 3],
+        )
     
     # Create feed dict
     im = image_io.imread(image_path)
@@ -42,9 +45,13 @@ if __name__=='__main__':
     feed_dict = plh.get_feed_dict(inputs)
    
     # Restore model and get top-5 class predictions
-    sess = tf.Session(graph=graph)
+    config = tf.ConfigProto()
+    config.gpu_options.allow_growth = True
+    config.gpu_options.per_process_gpu_memory_fraction = 0.8
+    sess = tf.Session(config=config, graph=graph)
+
     resnet_model.restore_pretrained_model(sess, ckpt_filename)
     logits = resnet_model.logits.eval(feed_dict,sess)
     model.class_prediction(logits[0,:])
-    pdb.set_trace()
+
     sess.close()

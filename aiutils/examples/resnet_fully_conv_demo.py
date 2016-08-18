@@ -53,6 +53,6 @@ if __name__=='__main__':
     logits = resnet_model.logits.eval(feed_dict,sess)
     pred = np.argmax(logits, 3)
     colored_pred = label2rgb(pred[0,:,:])
-    image_io.imwrite(np.uint8(colored_pred*255), './colored_pred.jpg')
+    image_io.imwrite(np.uint8(colored_pred*255), './aiutils/examples/telephone_pred.jpg')
     
     sess.close()
