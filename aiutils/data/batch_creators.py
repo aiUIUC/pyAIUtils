@@ -20,7 +20,7 @@ def sequential(batch_size, num_samples, num_epochs=1, offset=0):
     for epoch in range(num_epochs) if num_epochs > 0 else itertools.count():
         indices = np.arange(num_samples) + offset
         for i in range(0, num_samples - batch_size + 1, batch_size):
-            yield indices[i:i + batch_size] % batch_size
+            yield indices[i:i + batch_size]
 
 
 def random(batch_size, num_samples, num_epochs=1, offset=0):
