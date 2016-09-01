@@ -123,11 +123,6 @@ def conv2d_transpose(input,
                             initializer=w_init)
         b = tf.get_variable('b', shape=[out_dim], initializer=b_init)
 
-        print "in_shape"
-        print in_shape
-        print "out_shape"
-        print out_shape
-
         output = tf.nn.conv2d_transpose(input, w, out_shape, strides=strides, padding=padding) + b
         if func is not None:
             output = func(output)
