@@ -100,6 +100,36 @@ def conv2d(input,
     tf.add_to_collection('to_regularize', w)
     return output
 
+def conv2d_transpose(input,
+           filter_size,
+           out_dim,
+           name,
+           strides=[1, 1, 1, 1],
+           gain=np.sqrt(2),
+           func=tf.nn.relu,
+           reuse_vars=False):
+    padding = 'SAME'
+    in_shape = input.get_shape().as_list()
+    in_dim = in_shape[-1]
+    out_shape = [x*y for x,y in zip(in_shape, strides)]
+    out_shape[-1] = out_dim
+
+    stddev = 1.0 * gain / np.sqrt(filter_size * filter_size * in_dim)
+    with tf.variable_scope(name, reuse=reuse_vars):
+        w_init = tf.random_normal_initializer(stddev=stddev)
+        b_init = tf.constant_initializer()
+        w = tf.get_variable('w',
+                            shape=[filter_size, filter_size, out_dim, in_dim],
+                            initializer=w_init)
+        b = tf.get_variable('b', shape=[out_dim], initializer=b_init)
+
+        output = tf.nn.conv2d_transpose(input, w, out_shape, strides=strides, padding=padding) + b
+        if func is not None:
+            output = func(output)
+
+    tf.add_to_collection('to_regularize', w)
+    return output
+
 
 def atrous_conv2d(input,
                   filter_size,

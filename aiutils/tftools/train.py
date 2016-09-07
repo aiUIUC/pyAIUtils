@@ -88,21 +88,19 @@ class MultiRateOptimizer():
         other_params (dict): A dictionary of param_name, value to pass the the default optimizer
         """
 
-        print 'test'
         chck_vars = self.check_variables(variables)
-        if len(chck_vars) != 0:
-            raise ValueError('Expected all new variables, got overlap', *
-                             [v.name for v in chck_vars])
-        assert (len(self.check_variables(variables)) == 0)
+        if chck_vars:
+            raise ValueError('Expected all new variables, got overlap',
+                             *[v.name for v in chck_vars])
         self.variables.append(variables)
 
-        if (optimizer is not None):
+        if optimizer:
             self.optimizers.append(optimizer)
         else:
-            if self.default_optimizer is None:
+            if not self.default_optimizer:
                 raise ValueError(
                     'default_optimizer is None',
-                    'When optimizer is not passed to add_variables, expect default_optimizer to be not None')
+                    'default_optimzier can not be None if optimizer is not passed to add_variables')
 
             self.optimizers.append(
                 self.default_optimizer(learning_rate, **other_params))

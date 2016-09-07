@@ -46,10 +46,12 @@ class BatchNorm():
     def get_normalizer(self, input, train_flag):
         if train_flag:
             self.mean, self.variance = tf.nn.moments(input, self.axes)
+            # Fixes numerical instability if variance ~= 0, and it goes negative
+            v = tf.nn.relu(self.variance)
             ema_apply_op = self.ema.apply([self.mean, self.variance])
             with tf.control_dependencies([ema_apply_op]):
                 self.output_training = tf.nn.batch_normalization(
-                    input, self.mean, self.variance, self.offset, self.scale,
+                    input, self.mean, v, self.offset, self.scale,
                     self.epsilon, 'normalizer_train'),
             return self.output_training
         else:
