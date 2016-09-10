@@ -9,10 +9,10 @@ import numpy as np
 
 from skimage.color import label2rgb
 import tensorflow as tf
-import pdb
+
 
 if __name__=='__main__':
-    im_h, im_w = (224, 224)
+    im_h, im_w = (512, 512)
     
     # Path to the image to apply resnet on
     image_path = './aiutils/examples/telephone.jpg'
@@ -30,7 +30,7 @@ if __name__=='__main__':
             tf.float32,
             shape=[None,im_h,im_w,3])
 
-        resnet_model = model.ResnetInference(
+        resnet_model = model.ResnetFullyConvInference(
             plh['images'],
             num_blocks = [3, 4, 6, 3]
         )
@@ -46,7 +46,7 @@ if __name__=='__main__':
     # Restore model and get top-5 class predictions
     config = tf.ConfigProto()
     config.gpu_options.allow_growth = True
-    config.gpu_options.per_process_gpu_memory_fraction = 0.8
+    config.gpu_options.per_process_gpu_memory_fraction = 1.0
     sess = tf.Session(config=config, graph=graph)
 
     resnet_model.restore_pretrained_model(sess, ckpt_filename)

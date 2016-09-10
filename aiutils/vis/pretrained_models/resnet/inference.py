@@ -45,7 +45,7 @@ def inference(x, is_training,
     c['fc_units_out'] = num_classes
     c['num_blocks'] = num_blocks
     c['stack_stride'] = 2
-
+    c['rate'] = None
     with tf.variable_scope('scale1'):
         c['conv_filters_out'] = 64
         c['ksize'] = 7
@@ -315,7 +315,7 @@ def conv(x, c):
     ksize = c['ksize']
     stride = c['stride']
     filters_out = c['conv_filters_out']
-
+    rate = c['rate']
     filters_in = x.get_shape()[-1]
     shape = [ksize, ksize, filters_in, filters_out]
     initializer = tf.truncated_normal_initializer(stddev=CONV_WEIGHT_STDDEV)
@@ -324,11 +324,23 @@ def conv(x, c):
                             dtype='float',
                             initializer=initializer,
                             weight_decay=CONV_WEIGHT_DECAY)
-    return tf.nn.conv2d(x, weights, [1, stride, stride, 1], padding='SAME')
+    
+    if rate:
+        x = tf.nn.atrous_conv2d(x, weights, rate=rate, padding='SAME')
+    else:
+        x = tf.nn.conv2d(x, weights, [1, stride, stride, 1], padding='SAME')
+
+    return x 
 
 
 def _max_pool(x, ksize=3, stride=2):
     return tf.nn.max_pool(x,
+                          ksize=[1, ksize, ksize, 1],
+                          strides=[1, stride, stride, 1],
+                          padding='SAME')
+
+def _avg_pool(x, ksize=3, stride=2):
+    return tf.nn.avg_pool(x,
                           ksize=[1, ksize, ksize, 1],
                           strides=[1, stride, stride, 1],
                           padding='SAME')

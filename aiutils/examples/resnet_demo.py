@@ -8,7 +8,7 @@ import os
 import numpy as np
 
 import tensorflow as tf
-import pdb
+
 
 if __name__=='__main__':
     im_h, im_w = (224, 224)
@@ -17,8 +17,6 @@ if __name__=='__main__':
     image_path = './aiutils/examples/telephone.jpg'
     
     # Checkpoint file to restore parameters from
-    # model_dir = '/home/tanmay/Downloads/pretrained_networks/' + \
-    #             'Resnet/tensorflow-resnet-pretrained-20160509'
     model_dir = '/home/nfs/tgupta6/data/Resnet'
     ckpt_filename = os.path.join(model_dir, 'ResNet-L50.ckpt')
 
@@ -51,7 +49,7 @@ if __name__=='__main__':
     sess = tf.Session(config=config, graph=graph)
 
     resnet_model.restore_pretrained_model(sess, ckpt_filename)
-    logits = resnet_model.logits.eval(feed_dict,sess)
-    model.class_prediction(logits[0,:])
+    logits = resnet_model.get_logits().eval(feed_dict,sess)
+    resnet_model.imagenet_class_prediction(logits[0,:])
 
     sess.close()
