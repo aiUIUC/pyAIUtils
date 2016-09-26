@@ -105,14 +105,16 @@ def conv2d_transpose(input,
            out_dim,
            name,
            strides=[1, 1, 1, 1],
+           padding='SAME',
            gain=np.sqrt(2),
            func=tf.nn.relu,
            reuse_vars=False):
-    padding = 'SAME'
     in_shape = input.get_shape().as_list()
     in_dim = in_shape[-1]
-    out_shape = [x*y for x,y in zip(in_shape, strides)]
-    out_shape[-1] = out_dim
+    if padding=='SAME':
+        out_shape = [in_shape[0]] + [x*y for x,y in zip(in_shape[1:-1], strides[1:-1])] + [out_dim]
+    if padding=='VALID':
+        out_shape = [in_shape[0]] + [(x - 1) * y + filter_size for x,y in zip(in_shape[1:-1], strides[1:-1])] + [out_dim]
 
     stddev = 1.0 * gain / np.sqrt(filter_size * filter_size * in_dim)
     with tf.variable_scope(name, reuse=reuse_vars):
