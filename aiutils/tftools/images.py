@@ -20,4 +20,4 @@ def resize_images_like(images, reference_tensor, method=0, align_corners=False):
         Will have shape `[batch, width_new, height_new, channels]`
     """
     _,w,h,_ = reference_tensor.get_shape().as_list()
-    return tf.image.resize_images(images, w, h, method=method, align_corners=align_corners)
+    return tf.image.resize_images(images, [w, h], method=method, align_corners=align_corners)
