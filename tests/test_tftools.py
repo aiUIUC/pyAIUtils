@@ -86,9 +86,9 @@ def test_batch_norm_2d():
     training = tf.placeholder(tf.bool, [])
     y = layers.batch_norm(x, training)
     sess = tf.Session()
-    sess.run(tf.initialize_all_variables())
-
     x_ = np.float32(np.random.randn(*input_shape))
+    
+    sess.run(tf.initialize_all_variables(), feed_dict={x:x_, training:True})
     y_hat = sess.run(y, feed_dict={x: x_, training: True})
 
     assert y_hat.shape == x_.shape
@@ -110,9 +110,9 @@ def test_batch_norm_4d():
     training = tf.placeholder(tf.bool, [])
     y = layers.batch_norm(x, training)
     sess = tf.Session()
-    sess.run(tf.initialize_all_variables())
-
     x_ = np.float32(np.random.randn(*input_shape))
+    sess.run(tf.initialize_all_variables(), feed_dict={x:x_, training:True})
+
     y_hat = sess.run(y, feed_dict={x: x_, training: True})
 
     assert y_hat.shape == x_.shape
@@ -158,7 +158,7 @@ def test_batchnorm_train_mode():
 
     sess = tf.Session(graph=g)
     with sess.as_default():
-        sess.run(initializer)
+        sess.run(initializer, feed_dict={x:x_val1, training:True})
         y_eval1 = y.eval(feed_dict={x: x_val1, training: True})
         ema_mean_eval1 = ema_mean.eval()
 
@@ -187,7 +187,7 @@ def test_batchnorm_test_mode():
 
     g = tf.Graph()
     with g.as_default():
-        training = tf.placeholder(tf.bool, [])
+        training = tf.placeholder(tf.bool, shape = ())
         x = tf.placeholder(tf.float32, input_shape)
         bn = batch_normalizer.BatchNorm(x, training, name='bn')
         y = bn.output
@@ -199,7 +199,7 @@ def test_batchnorm_test_mode():
 
     sess = tf.Session(graph=g)
     with sess.as_default():
-        sess.run(initializer)
+        sess.run(initializer, feed_dict={x: x_val1, training: True})
 
         y_eval1 = y.eval(feed_dict={x: x_val1, training: False})
         ema_mean_eval1 = ema_mean.eval()
