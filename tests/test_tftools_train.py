@@ -19,7 +19,7 @@ def test_simple_multi_optimizer_momentum():
             [b], learning_rate=.05, other_params={'momentum': .01})
 
         opt = optimizer.minimize(loss)
-        tf.initialize_all_variables().run()
+        tf.global_variables_initializer().run()
 
         for i in range(1000):
             opt.run()
@@ -44,7 +44,7 @@ def test_simple_multi_optimizer0():
         optimizer.add_variables([b], learning_rate=.05)
 
         opt = optimizer.minimize(loss)
-        tf.initialize_all_variables().run()
+        tf.global_variables_initializer().run()
 
         for i in range(100):
             opt.run()
@@ -69,7 +69,7 @@ def test_simple_multi_optimizer1():
             [a], learning_rate=.1).add_variables(
                 [b], learning_rate=.05).minimize(loss)
 
-        tf.initialize_all_variables().run()
+        tf.global_variables_initializer().run()
 
         for i in range(100):
             opt.run()
@@ -94,7 +94,7 @@ def test_simple_multi_optimizer2():
         optimizer.add_variables([b], tf.train.GradientDescentOptimizer(.05))
 
         opt = optimizer.minimize(loss)
-        tf.initialize_all_variables().run()
+        tf.global_variables_initializer().run()
 
         for i in range(100):
             opt.run()
@@ -120,7 +120,7 @@ def test_multi_optimizer():
         optimizer.add_variables([c], tf.train.GradientDescentOptimizer(.001))
 
         opt = optimizer.minimize(loss)
-        tf.initialize_all_variables().run()
+        tf.global_variables_initializer().run()
         opt.run()
         float_eps = .1
         assert abs(c.eval() - (3 - .002)) < float_eps * .002
