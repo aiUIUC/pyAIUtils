@@ -1,6 +1,5 @@
 import numpy as np
 import tensorflow as tf
-from batch_normalizer import BatchNorm
 
 
 def full(input,
@@ -190,7 +189,7 @@ def batch_norm(input,
     else:
         raise ValueError('Input tensor must have rank 2 or 4.')
 
-    output = tf.contrib.layers.batch_norm(input, decay=decay, scale=True, epsilon=epsilon, updates_collections=None, scope=name, reuse=reuse_vars)
+    output = tf.contrib.layers.batch_norm(input, decay=decay, is_training=training, scale=True, epsilon=epsilon, updates_collections=None, scope=name, reuse=reuse_vars)
 
     if rank == 2:
         return tf.squeeze(output, [1,2])
