@@ -1,6 +1,4 @@
 import tensorflow as tf
-from tensorflow.python.ops import control_flow_ops
-
 
 class BatchNorm():
     def __init__(self,
