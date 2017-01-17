@@ -21,7 +21,7 @@ def test_full():
     x = tf.placeholder(tf.float32, input_shape)
     y = layers.full(x, out_dim, 'full')
     sess = tf.Session()
-    sess.run(tf.initialize_all_variables())
+    sess.run(tf.global_variables_initializer())
 
     x_ = np.float32(np.zeros(input_shape))
     y_ = np.float32(np.zeros(output_shape))
@@ -46,7 +46,7 @@ def test_conv2d():
     x = tf.placeholder(tf.float32, input_shape)
     y = layers.conv2d(x, filter_size, out_dim, 'conv2d')
     sess = tf.Session()
-    sess.run(tf.initialize_all_variables())
+    sess.run(tf.global_variables_initializer())
 
     x_ = np.float32(np.zeros(input_shape))
     y_ = np.float32(np.zeros(output_shape))
@@ -88,7 +88,7 @@ def test_batch_norm_2d():
     sess = tf.Session()
     x_ = np.float32(np.random.randn(*input_shape))
     
-    sess.run(tf.initialize_all_variables(), feed_dict={x:x_, training:True})
+    sess.run(tf.global_variables_initializer())
     y_hat = sess.run(y, feed_dict={x: x_, training: True})
 
     assert y_hat.shape == x_.shape
@@ -111,7 +111,8 @@ def test_batch_norm_4d():
     y = layers.batch_norm(x, training)
     sess = tf.Session()
     x_ = np.float32(np.random.randn(*input_shape))
-    sess.run(tf.initialize_all_variables(), feed_dict={x:x_, training:True})
+    #sess.run(tf.global_variables_initializer(), feed_dict={x:x_, training:True})
+    sess.run(tf.global_variables_initializer())
 
     y_hat = sess.run(y, feed_dict={x: x_, training: True})
 
@@ -135,6 +136,45 @@ def test_batch_norm_3d():
 
     tf.reset_default_graph()
 
+def test_batchnorm_train_mode_2d():
+    batch = 5
+    width = 2
+    height = 3
+    channels = 4
+
+    input_shape = [batch, channels]
+
+    g = tf.Graph()
+    with g.as_default():
+        training = tf.placeholder(tf.bool, [])
+        x = tf.placeholder(tf.float32, input_shape)
+        bn = batch_normalizer.BatchNorm(x, training, name='bn')
+        y = bn.output
+        ema_mean, ema_var = bn.get_ema_moments()
+        initializer = tf.global_variables_initializer()
+
+    x_val1 = np.ones(input_shape, dtype=np.float32)
+    x_val2 = 2.0 * x_val1
+
+    sess = tf.Session(graph=g)
+    with sess.as_default():
+        sess.run(initializer)
+        y_eval1 = y.eval(feed_dict={x: x_val1, training: True})
+        ema_mean_eval1 = ema_mean.eval()
+
+        y_eval2 = y.eval(feed_dict={x: x_val2, training: True})
+        ema_mean_eval2 = ema_mean.eval()
+
+    sess.close()
+
+    assert_str = 'batch mean and var are not used correctly' + \
+                 'during training with batch norm'
+    assert (np.all(y_eval1 == np.zeros(input_shape))), assert_str
+    assert_str = 'batch mean and var are not used correctly' + \
+                 'during training with batch norm'
+    assert (np.all(y_eval2 == np.zeros(input_shape))), assert_str
+    assert_str = 'ema mean is not updated during training with batch norm'
+    assert (not np.all(ema_mean_eval1 == ema_mean_eval2)), assert_str
 
 def test_batchnorm_train_mode():
     batch = 5
@@ -151,14 +191,14 @@ def test_batchnorm_train_mode():
         bn = batch_normalizer.BatchNorm(x, training, name='bn')
         y = bn.output
         ema_mean, ema_var = bn.get_ema_moments()
-        initializer = tf.initialize_all_variables()
+        initializer = tf.global_variables_initializer()
 
     x_val1 = np.ones(input_shape, dtype=np.float32)
     x_val2 = 2.0 * x_val1
 
     sess = tf.Session(graph=g)
     with sess.as_default():
-        sess.run(initializer, feed_dict={x:x_val1, training:True})
+        sess.run(initializer)
         y_eval1 = y.eval(feed_dict={x: x_val1, training: True})
         ema_mean_eval1 = ema_mean.eval()
 
@@ -192,14 +232,14 @@ def test_batchnorm_test_mode():
         bn = batch_normalizer.BatchNorm(x, training, name='bn')
         y = bn.output
         ema_mean, ema_var = bn.get_ema_moments()
-        initializer = tf.initialize_all_variables()
+        initializer = tf.global_variables_initializer()
 
     x_val1 = np.ones(input_shape, dtype=np.float32)
     x_val2 = 2.0 * x_val1
 
     sess = tf.Session(graph=g)
     with sess.as_default():
-        sess.run(initializer, feed_dict={x: x_val1, training: True})
+        sess.run(initializer)
 
         y_eval1 = y.eval(feed_dict={x: x_val1, training: False})
         ema_mean_eval1 = ema_mean.eval()
@@ -257,7 +297,7 @@ def test_resize_image_like():
     assert x_resize2.get_shape() == s.get_shape()
 
     sess = tf.Session()
-    sess.run(tf.initialize_all_variables())
+    sess.run(tf.global_variables_initializer())
     x_ = np.float32(np.random.rand(*input_shape))
     x_out = sess.run(x_resize, {x: x_})
     assert x_out.shape == s.get_shape()

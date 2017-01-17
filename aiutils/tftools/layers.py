@@ -158,6 +158,7 @@ def atrous_conv2d(input,
     return output
 
 
+
 def batch_norm(input,
                training=tf.constant(True),
                decay=0.95,
@@ -180,8 +181,19 @@ def batch_norm(input,
     Returns:
         output (tensor): Batch normalized output tensor
     """
-    bn = BatchNorm(input, training, decay, epsilon, name, reuse_vars)
-    output = bn.output
+
+    rank = len(input.get_shape().as_list())
+    if rank == 2:
+        input = tf.expand_dims(tf.expand_dims(input, 1), 1)
+    elif rank == 4:
+        pass
+    else:
+        raise ValueError('Input tensor must have rank 2 or 4.')
+
+    output = tf.contrib.layers.batch_norm(input, decay=decay, scale=True, epsilon=epsilon, updates_collections=None, scope=name, reuse=reuse_vars)
+
+    if rank == 2:
+        return tf.squeeze(output, [1,2])
 
     return output
 
