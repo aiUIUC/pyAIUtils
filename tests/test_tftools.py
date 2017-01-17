@@ -200,9 +200,7 @@ def test_batchnorm_train_mode():
     assert (np.all(y_eval1 == np.zeros(input_shape))), assert_str
     assert_str = 'batch mean and var are not used correctly' + \
                  'during training with batch norm'
-    #assert (np.all(y_eval2 ==np.zeros(input_shape))), assert_str
     np.testing.assert_allclose(y_eval2, np.zeros(input_shape), atol=1e-4, err_msg=assert_str)
-    #assert (np.testing.assert_allclose(y_eval2, np.zeros(input_shape), atol=1e-4)), assert_str
 
 
 def test_batchnorm_test_mode():
