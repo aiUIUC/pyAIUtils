@@ -21,7 +21,7 @@ def collect_name(var_name, graph=None, var_type=tf.GraphKeys.VARIABLES):
     return var_list[0]
 
 
-def collect_scope(name_scope, graph=None, var_type=tf.GraphKeys.VARIABLES):
+def collect_scope(name_scope, graph=None, var_type=tf.GraphKeys.GLOBAL_VARIABLES):
     if graph == None:
         graph = tf.get_default_graph()
 
@@ -37,7 +37,7 @@ def collect_all(graph=None):
     if graph == None:
         graph = tf.get_default_graph()
 
-    var_list = graph.get_collection(tf.GraphKeys.VARIABLES)
+    var_list = graph.get_collection(tf.GraphKeys.GLOBAL_VARIABLES)
 
     return var_list
 
@@ -51,7 +51,7 @@ def collect_all_trainable(graph=None):
     return var_list
 
 
-def collect_list(var_name_list, graph=None, var_type=tf.GraphKeys.VARIABLES):
+def collect_list(var_name_list, graph=None, var_type=tf.GraphKeys.GLOBAL_VARIABLES):
     var_dict = dict()
     for var_name in var_name_list:
         var_dict[var_name] = collect_name(

@@ -110,7 +110,6 @@ def test_batch_norm_4d():
     y = layers.batch_norm(x, training)
     sess = tf.Session()
     x_ = np.float32(np.random.randn(*input_shape))
-    #sess.run(tf.global_variables_initializer(), feed_dict={x:x_, training:True})
     sess.run(tf.global_variables_initializer())
 
     y_hat = sess.run(y, feed_dict={x: x_, training: True})
