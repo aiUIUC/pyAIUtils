@@ -4,4 +4,3 @@ pillow
 pytest
 tensorflow
 future
-scipy
