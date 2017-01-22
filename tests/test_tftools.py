@@ -275,16 +275,16 @@ def test_placeholder_management():
     plh_mgr.add_placeholder('word_embed', tf.float64, [10, 10])
     plh_mgr.add_placeholder('sp_ids', tf.int64, sparse=True)
     plh_mgr.add_placeholder('weights', tf.float64, sparse=True)
-    plh_mgr.add_list_placeholder('list_of_ints', tf.int32, shape=[2], size=3)
+    plh_mgr.add_placeholder('list_of_ints', tf.int32, shape=[2], size=3)
 
     # Get a dictionary of placeholders
-    plhs = plh_mgr.get_placeholders()
+    plhs = plh_mgr
 
     # Define computation graph
-    y = tf.nn.embedding_lookup_sparse(plhs['word_embed'], plhs['sp_ids'],
-                                      plhs['weights'])
+    y = tf.nn.embedding_lookup_sparse(plhs['word_embed'], plhs['sp_ids']['tensor'],
+                                      plhs['weights']['tensor'])
     list_of_ints = plh_mgr['list_of_ints']
-    z = list_of_ints[0] + list_of_ints[1] + plhs['list_of_ints_2_']
+    z = list_of_ints[0] + list_of_ints[1] + list_of_ints[2]
 
     # Create data to be fed into the graph
     I = np.array([0, 0, 1, 1])
@@ -340,6 +340,8 @@ def test_placeholder_management():
         raise
 
     tf.reset_default_graph()
+
+
 
 
 def test_var_collect():
@@ -409,3 +411,5 @@ def test_var_collect_type():
     with pytest.raises(AssertionError):
         vars_trainable_2 = var_collect.collect_scope(
             'scope2', graph=g, var_type=tf.GraphKeys.TRAINABLE_VARIABLES)
+
+ 
