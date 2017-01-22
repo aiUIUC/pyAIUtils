@@ -1,23 +1,18 @@
 """This module defines a helper class for managing placeholders in Tensorflow.
-
 The PlholderManager class allows easy management of placeholders including
 adding placeholders to a Tensorflow graph, producing easy access to the added
 placeholders using a dictionary with placeholder names as keys, create feed
 dictionary from a given input dictionary, and print placeholders and feed dict
 to standard output.
-
 More importantly, the class allows sparse scipy matrices to
 be passed into graphs (Tensorflow currently allows only dense matrices to be fed
 into placeholders).
-
 Usage:
     pm = PlaceholderManager()
     pm.add_placeholder('x1', tf.float64, [1,2])
     pm.add_placeholder('x2', tf.float64, [1,2])
-
     # Use placeholders in your graph
     y = pm['x1'] + pm['x2']
-
     # Create feed dictionary
     feed_dict = pm.get_feed_dict({'x1': np.array([3.0, 4.0]),
                                   'x2': np.array([5.0, 2.0])})
@@ -26,6 +21,7 @@ Usage:
 import tensorflow as tf
 import numpy as np
 import scipy.sparse as sps
+import pprint as pp
 import pdb
 
 
@@ -34,165 +30,185 @@ class PlaceholderManager():
 
     def __init__(self):
         self._placeholders = dict()
-        self.issparse = dict()
+        self.issparse = set()
+        self.islist = set()
 
-    def add_placeholder(self, name, dtype, shape=None, sparse=False):
+    def add_placeholder(
+            self,
+            name,
+            dtype,
+            shape=None,
+            size=None,
+            sparse=False):
         """Add placeholder.
-
-        If the sparse is True then 3 placeholders are automatically created
-        corresponding to the indices and values of the non-zero entries, and
-        shape of the sparse matrix. The user does not need to keep track of
-        these and can directly pass a sparse scipy matrix as input and a
-        Tensorflow SparseTensor object is made available for use in the graph.
-
         Args:
             name (str): Name of the placeholder.
             dtype (tf.Dtype): Data type for the placeholder.
             shape (list of ints): Shape of the placeholder.
-            sparse (bool): Specifies if the placeholder takes sparse inputs.
+            size (int) : If not None a list of placeholders is created with
+                the size being the length of the list. plh[name] returns the 
+                list of placeholders in this case.
+            sparse (bool): If True, 3 placeholders are automatically created
+                for passing in indices and values of the non-zero entries, and
+                shape of the sparse matrix. In addition it automatically adds a
+                tf.SparseTensor op which converts the 3 placeholders into a 
+                single sparse tensor. plh[name] returns a dict with 'indices',
+                'values', 'shape', and 'tensor' as keys. The first three may be
+                used to pass in inputs as part of a feed dict, and the last can 
+                be used for passing the sparse tensor to upstream ops. Instead 
+                of keeping track of 3 tensors in feed dict, a sparse matrix can 
+                be directly passed as input while using get_feed_dict method. 
+                We will refer to the dict returned by plh[name] as a sparse 
+                placeholder. 
         """
-
-        self.issparse[name] = sparse
-        if not sparse:
-            self._placeholders[name] = tf.placeholder(dtype, shape, name)
-
+        if size:
+            assert_string = 'size needs to be a positive integer'
+            assert (isinstance(size, int) and size > 0), assert_string
+            self.islist.add(name)
+            self._placeholders[name] = [None] * size
+            for i in xrange(size):
+                self._placeholders[name][i] = self.create_placeholder(
+                    name + '_' + str(i) + '_',
+                    dtype,
+                    shape=shape,
+                    sparse=sparse)
         else:
-            name_indices = name + '_indices'
-            name_values = name + '_values'
-            name_shape = name + '_shape'
+            self._placeholders[name] = self.create_placeholder(
+                name,
+                dtype,
+                shape=shape,
+                sparse=sparse)
 
-            self._placeholders[name_indices] = tf.placeholder(tf.int64, [None, 2],
-                                                           name_indices)
-            self._placeholders[name_values] = tf.placeholder(dtype, [None],
-                                                          name_values)
-            self._placeholders[name_shape] = tf.placeholder(tf.int64, [2],
-                                                         name_shape)
+    def create_placeholder(self, name, dtype, shape=None, sparse=False):
+        if sparse:
+            self.issparse.add(name)
+            placeholder = dict()
+            placeholder['indices'] = tf.placeholder(
+                tf.int64, 
+                [None, 2],
+                name + '_indices')
+            placeholder['values'] = tf.placeholder(
+                dtype, 
+                [None],
+                name + '_values')
+            placeholder['shape'] = tf.placeholder(
+                tf.int64, 
+                [2],
+                name + '_shape')
+            placeholder['tensor'] = tf.SparseTensor(
+                placeholder['indices'],
+                placeholder['values'],
+                placeholder['shape'])
+        else:
+            placeholder = tf.placeholder(dtype, shape, name)
+
+        return placeholder
 
     def __getitem__(self, name):
         """Returns placeholder with the given name.
-
+        If name corresponds to a list of placeholders, the full list is
+        returned. Similarly if name corresponds to a sparse placeholder a dict
+        with keys 'indices', 'values', 'shape', and 'tensor' is returned. If
+        a name corresponds to a list of sparse placeholders then a list of dicts
+        (one for each sparse placeholder) is returned.
         Usage:
             plh_mgr = PlaceholderManager()
             plh_mgr.add_placeholder('var_name', tf.int64, sparse=True)
             placeholder = plh_mgr['var_name']
         """
-        sparse = self.issparse[name]
-        if not sparse:
-            placeholder = self._placeholders[name]
-        else:
-            placeholder_indices = self._placeholders[name + '_indices']
-            placeholder_values = self._placeholders[name + '_values']
-            placeholder_shape = self._placeholders[name + '_shape']
-            sparse_tensor = tf.SparseTensor(
-                placeholder_indices, placeholder_values, placeholder_shape)
-            placeholder = sparse_tensor
-
-        return placeholder
-
-    def get_placeholders(self):
-        """Returns a dictionary of placeholders with names as keys.
-
-        The returned dictionary provides an easy way of refering to the
-        placeholders and passing them to graph construction or evaluation
-        functions.
-        """
-        placeholders = dict()
-        for name in self.issparse.keys():
-            placeholders[name] = self[name]
-
-        return placeholders
+        return self._placeholders[name]
 
     def get_feed_dict(self, inputs):
         """Returns a feed dictionary that can be passed to eval() or run().
-
         This method creates a feed dictionary from provided inputs that can be
         passed directly into eval() or run() routines in Tensorflow.
-
         Usage:
+            import scipy.sparse as sps
             pm = PlaceholderManager()
             pm.add_placeholder('x', tf.float64, [1,2])
             pm.add_placeholder('y', tf.float64, [1,2])
-            z = pm['x'] + pm['y']
+            pm.add_placeholder('w', tf.float64, [1,2], size=2)
+            pm.add_placeholder('I', tf.float64, size=[1,2], sparse=True)
+            z = pm['x'] + pm['y'] + pm['w'][0] + pm['w'][1]
+            z = tf.sparse_add(z,pm['I'])
+        
             inputs = {
                 'x': np.array([3.0, 4.0]),
-                'y': np.array([5.0, 2.0])
+                'y': np.array([5.0, 2.0]),
+                'w': [np.array([1.0, 2.0]), np.array([3.0, 5.0])],
+                'I': sps.eye(1,2)
             }
             feed_dict = pm.get_feed_dict(inputs)
             z.eval(feed_dict)
-
         Args:
             inputs (dict): A dictionary with placeholder names as keys and the
-                inputs to be passed in as the values. For 'sparse' placeholders
+                inputs to be passed in as the values. For sparse placeholders
                 only the sparse scipy matrix needs to be passed in instead of
-                3 separate dense matrices of indices, values and shape.
+                3 separate dense matrices of indices, values and shape. Inputs
+                to a list of placeholders (size > 0) can be passed in as a list.
         """
         feed_dict = dict()
         for name, input_value in inputs.items():
-            try:
-                placeholder_sparsity = self.issparse[name]
-                input_sparsity = sps.issparse(input_value)
-                assert_str = 'Sparsity of placeholder and input do not match'
-                assert (placeholder_sparsity == input_sparsity), assert_str
-                if not input_sparsity:
-                    placeholder = self._placeholders[name]
-                    feed_dict[placeholder] = input_value
-
-                else:
-                    I, J, V = sps.find(input_value)
-
-                    placeholder_indices = self._placeholders[name + '_indices']
-                    placeholder_values = self._placeholders[name + '_values']
-                    placeholder_shape = self._placeholders[name + '_shape']
-
-                    feed_dict[placeholder_indices] = \
-                        np.column_stack([I, J]).astype(np.int64)
-                    feed_dict[placeholder_shape] = \
-                        np.array(input_value.shape).astype(np.int64)
-                    if placeholder_values.dtype == tf.int64:
-                        feed_dict[placeholder_values] = V.astype(np.int64)
-                    else:
-                        feed_dict[placeholder_values] = V
-
-            except KeyError:
-                print "No placeholder with name '{}'".format(name)
-                raise
+            if name in self.islist:
+                for i in xrange(len(self._placeholders[name])):
+                    self.get_feed_dict_inner(
+                        feed_dict, 
+                        name + '_' + str(i) + '_',
+                        self._placeholders[name][i], 
+                        input_value[i])
+            else:
+                self.get_feed_dict_inner(
+                    feed_dict, 
+                    name,
+                    self._placeholders[name], 
+                    input_value)
 
         return feed_dict
 
+    def get_feed_dict_inner(self, feed_dict, name, plh, input_value):
+        if name in self.issparse:
+            if isinstance(input_value, dict):
+                input_value_ = input_value
+            else:
+                I, J, V = sps.find(input_value)
+                input_value_ = dict()
+                input_value_['indices'] = np.column_stack([I, J]).astype(
+                    np.int64)
+                input_value_['shape'] = np.array(input_value.shape).astype(
+                    np.int64)
+                if plh['values'].dtype == tf.int64:
+                    input_value_['values'] = V.astype(np.int64)
+                else:
+                    input_value_['values'] = V
+            for key in [k for k in plh.keys() if not k == 'tensor']:
+                feed_dict[plh[key]] = input_value_[key]
+        else:
+            feed_dict[plh] = input_value
+
     def feed_dict_debug_string(self, feed_dict):
         """Returns feed dictionary as a neat string.
-
         Args:
             feed_dict (dict): Output of get_feed_dict() or a dictionary with
                 placeholders as keys and the values to be fed into the graph as
                 values.
         """
-
         debug_str = 'feed_dict={\n'
-        for plh, value in feed_dict.items():
-            debug_str += '{}: \n{}\n'.format(plh, value)
+        feed_dict_plhs = [(plh, plh.name) for plh in feed_dict.keys()]
+        feed_dict_plhs = sorted(feed_dict_plhs, key=lambda x: x[1])
+        for plh, name in feed_dict_plhs:
+            debug_str += '{}: \n{}\n'.format(plh, feed_dict[plh])
         debug_str += '}'
         return debug_str
 
-    def placeholder_debug_string(self, placeholders=None):
+    def placeholder_debug_string(self):
         """Returns placeholder information as a neat string.
-
         Args:
             placeholders (dict): Output of get_placeholders() or None in which
                 case self._placeholders is used.
         """
-
-        if not placeholders:
-            placeholders = self._placeholders
-
-        debug_str = 'placeholders={\n'
-        for name, plh in placeholders.items():
-            debug_str += "    '{}': {}\n".format(name, plh)
-        debug_str += '}'
+        debug_str = pp.pformat(self._placeholders, indent=4, width=80)
         return debug_str
 
     def __str__(self):
         """Allows PlaceholderManager object to be used with print or str()."""
         return self.placeholder_debug_string()
-
-

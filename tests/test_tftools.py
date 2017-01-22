@@ -277,11 +277,11 @@ def test_placeholder_management():
     plh_mgr.add_placeholder('weights', tf.float64, sparse=True)
 
     # Get a dictionary of placeholders
-    plhs = plh_mgr.get_placeholders()
+    plhs = plh_mgr
 
     # Define computation graph
-    y = tf.nn.embedding_lookup_sparse(plhs['word_embed'], plhs['sp_ids'],
-                                      plhs['weights'])
+    y = tf.nn.embedding_lookup_sparse(plhs['word_embed'], plhs['sp_ids']['tensor'],
+                                      plhs['weights']['tensor'])
 
     # Create data to be fed into the graph
     I = np.array([0, 0, 1, 1])
