@@ -67,19 +67,19 @@ class PlaceholderManager():
             self.islist.add(name)
             self._placeholders[name] = [None] * size
             for i in xrange(size):
-                self._placeholders[name][i] = self.create_placeholder(
+                self._placeholders[name][i] = self.__create_placeholder(
                     name + '_' + str(i) + '_',
                     dtype,
                     shape=shape,
                     sparse=sparse)
         else:
-            self._placeholders[name] = self.create_placeholder(
+            self._placeholders[name] = self.__create_placeholder(
                 name,
                 dtype,
                 shape=shape,
                 sparse=sparse)
 
-    def create_placeholder(self, name, dtype, shape=None, sparse=False):
+    def __create_placeholder(self, name, dtype, shape=None, sparse=False):
         if sparse:
             self.issparse.add(name)
             placeholder = dict()
@@ -151,13 +151,13 @@ class PlaceholderManager():
         for name, input_value in inputs.items():
             if name in self.islist:
                 for i in xrange(len(self._placeholders[name])):
-                    self.get_feed_dict_inner(
+                    self.__get_feed_dict_inner(
                         feed_dict, 
                         name + '_' + str(i) + '_',
                         self._placeholders[name][i], 
                         input_value[i])
             else:
-                self.get_feed_dict_inner(
+                self.__get_feed_dict_inner(
                     feed_dict, 
                     name,
                     self._placeholders[name], 
@@ -165,7 +165,7 @@ class PlaceholderManager():
 
         return feed_dict
 
-    def get_feed_dict_inner(self, feed_dict, name, plh, input_value):
+    def __get_feed_dict_inner(self, feed_dict, name, plh, input_value):
         if name in self.issparse:
             if isinstance(input_value, dict):
                 input_value_ = input_value
