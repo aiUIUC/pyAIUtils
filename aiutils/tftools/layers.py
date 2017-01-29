@@ -1,6 +1,5 @@
 import numpy as np
 import tensorflow as tf
-from batch_normalizer import BatchNorm
 
 
 def full(input,
@@ -69,7 +68,8 @@ def conv2d(input,
       out_dim (int): Number of output filters.
       name (str): Name used by the `tf.variable_scope`.
       strides (List[int]): The stride of the sliding window for each dimension
-        of `input`. Must be in the same order as the dimension specified with format.
+        of `input`. Must be in the same order as the dimension specified with 
+        format.
       padding (str): A `string` from: `'SAME', 'VALID'`.
         The type of padding algorithm to use.
       gain (float): Gain used when calculating stddev of weights.
@@ -158,6 +158,7 @@ def atrous_conv2d(input,
     return output
 
 
+
 def batch_norm(input,
                training=tf.constant(True),
                decay=0.95,
@@ -165,7 +166,7 @@ def batch_norm(input,
                name='bn',
                reuse_vars=False):
     """Adds a batch normalization layer.
-
+--------
     Args:
         input (tensor): Tensor to be batch normalized
         training (bool tensor): Boolean tensor of shape []
@@ -180,8 +181,27 @@ def batch_norm(input,
     Returns:
         output (tensor): Batch normalized output tensor
     """
-    bn = BatchNorm(input, training, decay, epsilon, name, reuse_vars)
-    output = bn.output
+
+    rank = len(input.get_shape().as_list())
+    if rank == 2:
+        input = tf.expand_dims(tf.expand_dims(input, 1), 1)
+    elif rank == 4:
+        pass
+    else:
+        raise ValueError('Input tensor must have rank 2 or 4.')
+
+    output = tf.contrib.layers.batch_norm(
+        input, 
+        decay=decay, 
+        is_training=training, 
+        scale=True, 
+        epsilon=epsilon, 
+        updates_collections=None, 
+        scope=name, 
+        reuse=reuse_vars)
+
+    if rank == 2:
+        return tf.squeeze(output, [1,2])
 
     return output
 
@@ -192,12 +212,12 @@ def dropout(input, training=True, keep_prob=.8, noise_shape=None, seed=None):
 
     Args:
         input (tensor): Tensor to droupout.
-        training (bool or bool tensor): Determines whether the dropout op is active
+        training (bool or bool tensor): Determines whether dropout op is active
         keep_prob (float): Deterimnes how much of the vector to not dropout
-        noise_shape (one-d int32 tensor): If noise_shape is specified, it must be broadcastable
-            to the shape of input. Dimensions with noise_shape[i] == shape(input)[i]
-            make independent decissions.
-        seed (int): Used to create random seeds. See tf.set_random_seed for behavior.
+        noise_shape (one-d int32 tensor): If noise_shape is specified, it must 
+        be broadcastable to the shape of input. Dimensions with 
+        noise_shape[i] == shape(input)[i] make independent decisions.
+        seed (int): Specifies random seeds. See tf.set_random_seed for behavior.
 
 
     Returns:
@@ -213,6 +233,11 @@ def dropout(input, training=True, keep_prob=.8, noise_shape=None, seed=None):
         else:
             return input
     else:
-        return tf.cond(training,
-                lambda: tf.nn.dropout(input, keep_prob, noise_shape=noise_shape, seed=seed),
-                lambda: input)
+        return tf.cond(
+            training,
+            lambda: tf.nn.dropout(
+                input, 
+                keep_prob, 
+                noise_shape=noise_shape, 
+                seed=seed),
+            lambda: input)
