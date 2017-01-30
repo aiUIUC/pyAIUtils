@@ -38,15 +38,15 @@ class PlaceholderManager():
             name,
             dtype,
             shape=None,
-            size=None,
+            list_len=None,
             sparse=False):
         """Add placeholder.
         Args:
             name (str): Name of the placeholder.
             dtype (tf.Dtype): Data type for the placeholder.
             shape (list of ints): Shape of the placeholder.
-            size (int) : If not None a list of placeholders is created with
-                the size being the length of the list. plh[name] returns the 
+            list_len (int) : If not None a list of placeholders is created with
+                list_len being the length of the list. plh[name] returns the 
                 list of placeholders in this case.
             sparse (bool): If True, 3 placeholders are automatically created
                 for passing in indices and values of the non-zero entries, and
@@ -61,12 +61,12 @@ class PlaceholderManager():
                 We will refer to the dict returned by plh[name] as a sparse 
                 placeholder. 
         """
-        if size:
-            assert_string = 'size needs to be a positive integer'
-            assert (isinstance(size, int) and size > 0), assert_string
+        if list_len:
+            assert_string = 'list_len needs to be a positive integer'
+            assert (isinstance(list_len, int) and list_len > 0), assert_string
             self.islist.add(name)
-            self._placeholders[name] = [None] * size
-            for i in xrange(size):
+            self._placeholders[name] = [None] * list_len
+            for i in xrange(list_len):
                 self._placeholders[name][i] = self.__create_placeholder(
                     name + '_' + str(i) + '_',
                     dtype,
@@ -127,8 +127,8 @@ class PlaceholderManager():
             pm = PlaceholderManager()
             pm.add_placeholder('x', tf.float64, [1,2])
             pm.add_placeholder('y', tf.float64, [1,2])
-            pm.add_placeholder('w', tf.float64, [1,2], size=2)
-            pm.add_placeholder('I', tf.float64, size=[1,2], sparse=True)
+            pm.add_placeholder('w', tf.float64, [1,2], list_len=2)
+            pm.add_placeholder('I', tf.float64, [1,2], sparse=True)
             z = pm['x'] + pm['y'] + pm['w'][0] + pm['w'][1]
             z = tf.sparse_add(z,pm['I'])
         
@@ -145,7 +145,8 @@ class PlaceholderManager():
                 inputs to be passed in as the values. For sparse placeholders
                 only the sparse scipy matrix needs to be passed in instead of
                 3 separate dense matrices of indices, values and shape. Inputs
-                to a list of placeholders (size > 0) can be passed in as a list.
+                to a list of placeholders (list_len > 0) can be passed in as 
+                a list.
         """
         feed_dict = dict()
         for name, input_value in inputs.items():

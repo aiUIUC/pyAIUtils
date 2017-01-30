@@ -273,15 +273,33 @@ def test_placeholder_management():
 
     # Add placeholders
     plh_mgr.add_placeholder('word_embed', tf.float64, [10, 10])
-    plh_mgr.add_placeholder('sp_ids', tf.int64, sparse=True)
-    plh_mgr.add_placeholder('weights', tf.float64, sparse=True)
-
+    plh_mgr.add_placeholder('sp_ids', tf.int64, [2, 4], sparse=True)
+    plh_mgr.add_placeholder('weights', tf.float64, [2, 4], sparse=True)
+    plh_mgr.add_placeholder('list_of_tensors', tf.int64, [4], list_len=3)
+    plh_mgr.add_placeholder(
+        'list_of_sparse_tensors', 
+        tf.int64, 
+        [2,2], 
+        list_len=2,
+        sparse=True)
+    
     # Get a dictionary of placeholders
     plhs = plh_mgr
 
     # Define computation graph
-    y = tf.nn.embedding_lookup_sparse(plhs['word_embed'], plhs['sp_ids']['tensor'],
-                                      plhs['weights']['tensor'])
+    y = tf.nn.embedding_lookup_sparse(
+        plhs['word_embed'], 
+        plhs['sp_ids']['tensor'],
+        plhs['weights']['tensor'])
+
+    z = dict()
+    for t in range(len(plhs['list_of_tensors'])):
+        z[t] = plhs['list_of_tensors'][t] + 1
+
+    w = dict()
+    for t in range(len(plhs['list_of_sparse_tensors'])):
+        w[t] = tf.sparse_tensor_to_dense(
+            plhs['list_of_sparse_tensors'][t]['tensor'])
 
     # Create data to be fed into the graph
     I = np.array([0, 0, 1, 1])
@@ -291,9 +309,24 @@ def test_placeholder_management():
     sp_ids = sps.coo_matrix((V, (I, J)), shape=(2, 4), dtype=np.int64)
     weights = sps.coo_matrix((W, (I, J)), shape=(2, 4), dtype=np.float64)
     word_embed = np.eye(10, 10, dtype=np.float64)
+    list_of_arrays = [
+        np.array([1,2,3,-1]),
+        np.array([4,5,6,-2]),
+        np.array([7,8,9,-3])
+    ]
+    list_of_sparse_matrices = [
+        sps.eye(2,2,dtype=np.int64),
+        2*sps.eye(2,2,dtype=np.int64),
+    ]
 
     # Create input dict
-    inputs = {'word_embed': word_embed, 'sp_ids': sp_ids, 'weights': weights, }
+    inputs = {
+        'word_embed': word_embed, 
+        'sp_ids': sp_ids, 
+        'weights': weights, 
+        'list_of_tensors': list_of_arrays,
+        'list_of_sparse_tensors': list_of_sparse_matrices
+    }
 
     # Create feed dictionary from inputs
     feed_dict = plh_mgr.get_feed_dict(inputs)
@@ -306,6 +339,19 @@ def test_placeholder_management():
 
     assert_str = '__getitem__ method of PlaceholderManager class failed'
     assert ('word_embed' in plh_mgr['word_embed'].name), assert_str
+
+    assert_str = 'passing list of lists failed'
+    for t in range(len(list_of_arrays)):
+        z_t_value = z[t].eval(feed_dict)
+        gt_z_t_value = list_of_arrays[t]+1
+        assert (np.array_equal(z_t_value, gt_z_t_value)), assert_str
+
+    assert_str = 'passing list of sparse matrices failed'
+    for t in range(len(list_of_sparse_matrices)):
+        w_t_value = w[t].eval(feed_dict)
+        gt_w_t_value = list_of_sparse_matrices[t].todense()
+        # convert to dense to compare
+        assert(np.array_equal(w_t_value,gt_w_t_value)), assert_str
 
     tf.reset_default_graph()
 
