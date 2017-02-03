@@ -2,23 +2,28 @@ from PIL import Image
 import numpy as np
 
 
-def imread(filename):
+def imread(filename,pil_object=False):
     """
     Matlab like function for reading an image file.
+    
+    Args:
+      filename (string): Image filename to read
+      pil_object (bool): If true the PIL image object is retured as well 
 
     Returns:
-    im_array (numpy.ndarray): h x w x 3 ndarray for color images and 
-        h x w for grayscale images
+      im_array (numpy.ndarray): See the following link for information on
+        different modes and the array sizes returned in those modes:
+        http://pillow.readthedocs.io/en/3.4.x/handbook/concepts.html#modes
+      im: PIL image object returned only if pil_object is set to True. This
+        could be used to find mode (`im.mode`) or to save the image 
+        (`im.save(filename)`) or to display the image (`im.show()`).
     """
     im = Image.open(filename)
-
-    err_str = \
-        "imread only supports 'RGB' and 'L' modes, found '{}'".format(im.mode)
-    assert (im.mode == 'RGB' or im.mode == 'L'), err_str
-
     im_array = np.array(im)
-
-    return im_array
+    if pil_object:
+        return im_array, im
+    else:
+        return im_array
 
 
 def imshow(np_im):
@@ -26,8 +31,8 @@ def imshow(np_im):
     Matlab like function for displaying a numpy ndarray as an image
 
     Args:
-    np_im (numpy.ndarray): h x w x 3 ndarray for color images and 
-        h x w for grayscale images with pixels stored in uint8 format
+      np_im (numpy.ndarray): h x w x 3 ndarray for color images and 
+      h x w for grayscale images with pixels stored in uint8 format
     """
     err_str = 'imshow expects ndarray of dimension h x w x c (RGB) or h x w (L)'
     assert (len(np_im.shape) == 3 or len(np_im.shape) == 2), err_str
