@@ -2,14 +2,22 @@ from PIL import Image
 import numpy as np
 
 
-def imread(filename):
+def imread(filename,pil_object=False):
     """
     Matlab like function for reading an image file.
+    
+    Args:
+      filename (string): Image filename to read
+      pil_object (bool): If true the PIL image object is retured as well 
 
     Returns:
       im_array (numpy.ndarray): See the following link for information on
-      different modes and the array sizes returned in those modes:
-      http://pillow.readthedocs.io/en/3.4.x/handbook/concepts.html#modes
+        different modes and the array sizes returned in those modes:
+        http://pillow.readthedocs.io/en/3.4.x/handbook/concepts.html#modes
+      im: PIL image object returned only if pil_object is set to True. This
+        could be used to find mode (`im.mode`) or to save the image 
+        (`im.save(filename)`) or to display the image (`im.show()`) .
+      
     """
     im = Image.open(filename)
     im_array = np.array(im)
