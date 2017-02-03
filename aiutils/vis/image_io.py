@@ -17,11 +17,10 @@ def imread(filename,pil_object=False):
       im: PIL image object returned only if pil_object is set to True. This
         could be used to find mode (`im.mode`) or to save the image 
         (`im.save(filename)`) or to display the image (`im.show()`).
-      
     """
     im = Image.open(filename)
     im_array = np.array(im)
-    if pil_objects:
+    if pil_object:
         return im_array, im
     else:
         return im_array
