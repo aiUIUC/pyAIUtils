@@ -100,24 +100,29 @@ def conv2d(input,
     tf.add_to_collection('to_regularize', w)
     return output
 
+
 def conv2d_transpose(input,
-           filter_size,
-           out_dim,
-           name,
-           strides=[1, 1, 1, 1],
-           padding='SAME',
-           gain=np.sqrt(2),
-           func=tf.nn.relu,
-           reuse_vars=False,
-           out_shape=None):
+                     filter_size,
+                     out_dim,
+                     name,
+                     strides=[1, 1, 1, 1],
+                     padding='SAME',
+                     gain=np.sqrt(2),
+                     func=tf.nn.relu,
+                     reuse_vars=False,
+                     out_shape=None):
     in_shape = input.get_shape().as_list()
     in_dim = in_shape[-1]
 
     if out_shape == None:
-        if padding=='SAME':
-            out_shape = [in_shape[0]] + [x*y for x,y in zip(in_shape[1:-1], strides[1:-1])] + [out_dim]
-        if padding=='VALID':
-            out_shape = [in_shape[0]] + [(x - 1) * y + filter_size for x,y in zip(in_shape[1:-1], strides[1:-1])] + [out_dim]
+        out_shape = in_shape
+        out_shape[3] = out_dim
+        if padding == 'SAME':
+            out_shape[1] = in_shape[1] * strides[1]
+            out_shape[2] = in_shape[2] * strides[2]
+        if padding == 'VALID':
+            out_shape[1] = (in_shape[1] - 1) * strides[1] + filter_size
+            out_shape[2] = (in_shape[2] - 1) * strides[2] + filter_size
 
     stddev = 1.0 * gain / np.sqrt(filter_size * filter_size * in_dim)
     with tf.variable_scope(name, reuse=reuse_vars):
@@ -128,7 +133,10 @@ def conv2d_transpose(input,
                             initializer=w_init)
         b = tf.get_variable('b', shape=[out_dim], initializer=b_init)
 
-        output = tf.nn.conv2d_transpose(input, w, out_shape, strides=strides, padding=padding) + b
+        output = tf.nn.conv2d_transpose(
+            input, w, out_shape,
+            strides=strides,
+            padding=padding) + b
         if func is not None:
             output = func(output)
 
@@ -193,7 +201,6 @@ def atrous_conv2d(input,
     return output
 
 
-
 def batch_norm(input,
                training=tf.constant(True),
                decay=0.95,
@@ -225,18 +232,17 @@ def batch_norm(input,
     else:
         raise ValueError('Input tensor must have rank 2 or 4.')
 
-    output = tf.contrib.layers.batch_norm(
-        input, 
-        decay=decay, 
-        is_training=training, 
-        scale=True, 
-        epsilon=epsilon, 
-        updates_collections=None, 
-        scope=name, 
-        reuse=reuse_vars)
+    output = tf.contrib.layers.batch_norm(input,
+                                          decay=decay,
+                                          is_training=training,
+                                          scale=True,
+                                          epsilon=epsilon,
+                                          updates_collections=None,
+                                          scope=name,
+                                          reuse=reuse_vars)
 
     if rank == 2:
-        return tf.squeeze(output, [1,2])
+        return tf.squeeze(output, [1, 2])
 
     return output
 
@@ -271,8 +277,8 @@ def dropout(input, training=True, keep_prob=.8, noise_shape=None, seed=None):
         return tf.cond(
             training,
             lambda: tf.nn.dropout(
-                input, 
-                keep_prob, 
-                noise_shape=noise_shape, 
+                input,
+                keep_prob,
+                noise_shape=noise_shape,
                 seed=seed),
             lambda: input)

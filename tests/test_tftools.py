@@ -55,6 +55,7 @@ def test_conv2d():
     sess.close()
     tf.reset_default_graph()
 
+
 def test_conv2d_transpose():
     batch = 1
     height = 16
@@ -64,13 +65,43 @@ def test_conv2d_transpose():
     out_dim = 5
 
     input_shape = [batch, height, width, in_dim]
-    output_shape = [batch, height/2, width/2, out_dim]
+    output_shape = [batch, height / 2, width / 2, out_dim]
 
-    x = tf.placeholder(tf.float32, input_shape)
-    y = layers.conv2d(x, filter_size, out_dim, 'conv2d', strides=[1,2,2,1])
-    y2 = layers.conv2d_transpose(y, filter_size, in_dim, 'conv2d_tr', strides=[1,2,2,1])
+    with tf.Graph().as_default():
+        x = tf.placeholder(tf.float32, input_shape)
+        y = layers.conv2d(
+            x, filter_size,
+            out_dim, 'conv2d',
+            strides=[1, 2, 2, 1])
+        z = layers.conv2d_transpose(
+            y, filter_size,
+            in_dim, 'conv2d_tr',
+            strides=[1, 2, 2, 1])
+        z_1 = layers.conv2d_transpose(y,
+                                      filter_size,
+                                      in_dim,
+                                      'conv2d_tr_1',
+                                      padding='VALID',
+                                      strides=[1, 2, 2, 1])
 
-    assert(np.all(y2.get_shape().as_list() == input_shape))
+        y2 = layers.conv2d(x,
+                           filter_size,
+                           out_dim,
+                           'conv2d2',
+                           padding='VALID',
+                           strides=[1, 2, 2, 1])
+        z2 = layers.conv2d_transpose(y2,
+                                     filter_size,
+                                     in_dim,
+                                     'conv2d_tr2',
+                                     padding='VALID',
+                                     strides=[1, 2, 2, 1],
+                                     out_shape=input_shape)
+
+    assert (np.all(z.get_shape().as_list() == input_shape))
+    assert (z_1.get_shape()[1] == 17)
+    assert (np.all(z2.get_shape().as_list() == input_shape))
+
 
 def test_atrous_conv2d():
 
@@ -102,7 +133,7 @@ def test_batch_norm_2d():
     y = layers.batch_norm(x, training)
     sess = tf.Session()
     x_ = np.float32(np.random.randn(*input_shape))
-    
+
     sess.run(tf.global_variables_initializer())
     y_hat = sess.run(y, feed_dict={x: x_, training: True})
 
@@ -150,6 +181,7 @@ def test_batch_norm_3d():
 
     tf.reset_default_graph()
 
+
 def test_batchnorm_train_mode_2d():
     batch = 5
     width = 2
@@ -184,6 +216,7 @@ def test_batchnorm_train_mode_2d():
                  'during training with batch norm'
     assert (np.all(y_eval2 == np.zeros(input_shape))), assert_str
 
+
 def test_batchnorm_train_mode():
     batch = 5
     width = 2
@@ -216,7 +249,10 @@ def test_batchnorm_train_mode():
     assert (np.all(y_eval1 == np.zeros(input_shape))), assert_str
     assert_str = 'batch mean and var are not used correctly' + \
                  'during training with batch norm'
-    np.testing.assert_allclose(y_eval2, np.zeros(input_shape), atol=1e-4, err_msg=assert_str)
+    np.testing.assert_allclose(y_eval2,
+                               np.zeros(input_shape),
+                               atol=1e-4,
+                               err_msg=assert_str)
 
 
 def test_batchnorm_test_mode():
@@ -229,7 +265,7 @@ def test_batchnorm_test_mode():
 
     g = tf.Graph()
     with g.as_default():
-        training = tf.placeholder(tf.bool, shape = (), name='is_train')
+        training = tf.placeholder(tf.bool, shape=(), name='is_train')
         x = tf.placeholder(tf.float32, input_shape)
         y = layers.batch_norm(x, training, name='bn')
         initializer = tf.global_variables_initializer()
@@ -312,21 +348,18 @@ def test_placeholder_management():
     plh_mgr.add_placeholder('sp_ids', tf.int64, [2, 4], sparse=True)
     plh_mgr.add_placeholder('weights', tf.float64, [2, 4], sparse=True)
     plh_mgr.add_placeholder('list_of_tensors', tf.int64, [4], list_len=3)
-    plh_mgr.add_placeholder(
-        'list_of_sparse_tensors', 
-        tf.int64, 
-        [2,2], 
-        list_len=2,
-        sparse=True)
-    
+    plh_mgr.add_placeholder('list_of_sparse_tensors',
+                            tf.int64, [2, 2],
+                            list_len=2,
+                            sparse=True)
+
     # Get a dictionary of placeholders
     plhs = plh_mgr
 
     # Define computation graph
-    y = tf.nn.embedding_lookup_sparse(
-        plhs['word_embed'], 
-        plhs['sp_ids']['tensor'],
-        plhs['weights']['tensor'])
+    y = tf.nn.embedding_lookup_sparse(plhs['word_embed'],
+                                      plhs['sp_ids']['tensor'],
+                                      plhs['weights']['tensor'])
 
     z = dict()
     for t in range(len(plhs['list_of_tensors'])):
@@ -334,8 +367,8 @@ def test_placeholder_management():
 
     w = dict()
     for t in range(len(plhs['list_of_sparse_tensors'])):
-        w[t] = tf.sparse_tensor_to_dense(
-            plhs['list_of_sparse_tensors'][t]['tensor'])
+        w[t] = tf.sparse_tensor_to_dense(plhs['list_of_sparse_tensors'][t][
+            'tensor'])
 
     # Create data to be fed into the graph
     I = np.array([0, 0, 1, 1])
@@ -346,20 +379,19 @@ def test_placeholder_management():
     weights = sps.coo_matrix((W, (I, J)), shape=(2, 4), dtype=np.float64)
     word_embed = np.eye(10, 10, dtype=np.float64)
     list_of_arrays = [
-        np.array([1,2,3,-1]),
-        np.array([4,5,6,-2]),
-        np.array([7,8,9,-3])
+        np.array([1, 2, 3, -1]), np.array([4, 5, 6, -2]),
+        np.array([7, 8, 9, -3])
     ]
     list_of_sparse_matrices = [
-        sps.eye(2,2,dtype=np.int64),
-        2*sps.eye(2,2,dtype=np.int64),
+        sps.eye(2, 2, dtype=np.int64),
+        2 * sps.eye(2, 2, dtype=np.int64),
     ]
 
     # Create input dict
     inputs = {
-        'word_embed': word_embed, 
-        'sp_ids': sp_ids, 
-        'weights': weights, 
+        'word_embed': word_embed,
+        'sp_ids': sp_ids,
+        'weights': weights,
         'list_of_tensors': list_of_arrays,
         'list_of_sparse_tensors': list_of_sparse_matrices
     }
@@ -379,7 +411,7 @@ def test_placeholder_management():
     assert_str = 'passing list of lists failed'
     for t in range(len(list_of_arrays)):
         z_t_value = z[t].eval(feed_dict)
-        gt_z_t_value = list_of_arrays[t]+1
+        gt_z_t_value = list_of_arrays[t] + 1
         assert (np.array_equal(z_t_value, gt_z_t_value)), assert_str
 
     assert_str = 'passing list of sparse matrices failed'
@@ -387,7 +419,7 @@ def test_placeholder_management():
         w_t_value = w[t].eval(feed_dict)
         gt_w_t_value = list_of_sparse_matrices[t].todense()
         # convert to dense to compare
-        assert(np.array_equal(w_t_value,gt_w_t_value)), assert_str
+        assert (np.array_equal(w_t_value, gt_w_t_value)), assert_str
 
     tf.reset_default_graph()
 
