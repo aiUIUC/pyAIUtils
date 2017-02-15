@@ -55,6 +55,22 @@ def test_conv2d():
     sess.close()
     tf.reset_default_graph()
 
+def test_conv2d_transpose():
+    batch = 1
+    height = 16
+    width = 16
+    filter_size = 3
+    in_dim = 4
+    out_dim = 5
+
+    input_shape = [batch, height, width, in_dim]
+    output_shape = [batch, height/2, width/2, out_dim]
+
+    x = tf.placeholder(tf.float32, input_shape)
+    y = layers.conv2d(x, filter_size, out_dim, 'conv2d', strides=[1,2,2,1])
+    y2 = layers.conv2d_transpose(y, filter_size, in_dim, 'conv2d_tr', strides=[1,2,2,1])
+
+    assert(np.all(y2.get_shape().as_list() == input_shape))
 
 def test_atrous_conv2d():
 
